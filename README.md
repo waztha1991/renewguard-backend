@@ -1,5 +1,7 @@
 # RenewGuard Backend
 
+> **Note:** currently configured to deploy as `renewguard-backend-dev` on the free `*.workers.dev` subdomain (no custom domain attached), separate from any existing production deployment.
+
 Kotlin/Ktor API + admin panel, split out from the main RenewGuard monorepo
 for independent deployment. Deploys as a Cloudflare Worker fronting a
 Docker container (see `deploy/cloudflare/`).

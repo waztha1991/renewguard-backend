@@ -1,12 +1,12 @@
-name: Deploy RenewGuard to Cloudflare
+name: Deploy RenewGuard Backend (dev)
 
 on:
   push:
-    branches: [master, main]
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
-  group: cloudflare-deploy
+  group: cloudflare-deploy-dev
   cancel-in-progress: true
 
 jobs:
@@ -25,60 +25,14 @@ jobs:
       - name: Install deploy dependencies
         run: npm install --no-fund --no-audit --legacy-peer-deps
 
-      - name: Clear tunnel CNAME blocking custom domain
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: |
-          set -euo pipefail
-          python3 <<'PY'
-          import json, os, urllib.error, urllib.request
-
-          token = os.environ["CLOUDFLARE_API_TOKEN"]
-          host = "api.renewguard.antsolutions.uk"
-          zone_name = "antsolutions.uk"
-
-          def api(url, method="GET"):
-              req = urllib.request.Request(
-                  url,
-                  method=method,
-                  headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-              )
-              try:
-                  with urllib.request.urlopen(req) as r:
-                      return json.load(r)
-              except urllib.error.HTTPError as e:
-                  body = e.read().decode("utf-8", "replace")
-                  print(f"HTTP {e.code} for {url}: {body[:500]}")
-                  return None
-
-          zones = api(f"https://api.cloudflare.com/client/v4/zones?name={zone_name}")
-          if not zones or not zones.get("success") or not zones.get("result"):
-              print("Could not resolve zone (token may lack Zone:Read). Continuing; custom domain step may still fail.")
-              raise SystemExit(0)
-
-          zone_id = zones["result"][0]["id"]
-          print(f"Zone ID: {zone_id}")
-          recs = api(f"https://api.cloudflare.com/client/v4/zones/{zone_id}/dns_records?name={host}")
-          if not recs or not recs.get("success"):
-              print("Could not list DNS records. Continuing.")
-              raise SystemExit(0)
-
-          if not recs["result"]:
-              print(f"No existing DNS records for {host}")
-              raise SystemExit(0)
-
-          for rec in recs["result"]:
-              rid = rec["id"]
-              print(f"Deleting {rec.get('type')} {rec.get('name')} -> {rec.get('content')}")
-              deleted = api(
-                  f"https://api.cloudflare.com/client/v4/zones/{zone_id}/dns_records/{rid}",
-                  method="DELETE",
-              )
-              print(deleted)
-          PY
-
-      - name: Deploy Worker + Container
+      - name: Deploy Worker + Container (dev)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx wrangler deploy --containers-rollout=immediate
+
+      # This deploys renewguard-backend-dev to your *.workers.dev subdomain.
+      # Your existing production Worker is untouched. When you're ready to
+      # promote to real production, add a `routes`/custom domain back to
+      # wrangler.jsonc (or a wrangler.jsonc "env.production" block) and a
+      # separate workflow/branch trigger for it.

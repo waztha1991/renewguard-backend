@@ -1,5 +1,5 @@
 {
-  "name": "renewguard-backend",
+  "name": "renewguard-backend-dev",
   "main": "deploy/cloudflare/worker/src/index.ts",
   "compatibility_date": "2026-06-01",
   "compatibility_flags": ["nodejs_compat"],
@@ -7,12 +7,6 @@
   "observability": {
     "enabled": true
   },
-  "routes": [
-    {
-      "pattern": "api.renewguard.antsolutions.uk",
-      "custom_domain": true
-    }
-  ],
   "containers": [
     {
       "class_name": "RenewGuardContainer",
