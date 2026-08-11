@@ -34,7 +34,7 @@ jobs:
           import json, os, urllib.error, urllib.request
 
           token = os.environ["CLOUDFLARE_API_TOKEN"]
-          host = "renewguard.antsolutions.uk"
+          host = "api.renewguard.antsolutions.uk"
           zone_name = "antsolutions.uk"
 
           def api(url, method="GET"):
