@@ -283,6 +283,7 @@
           <button data-tab="resets">Password resets <span id="resetBadge" class="badge UNUSED hidden" style="margin-left:4px">0</span></button>
           <button data-tab="policies">Policies</button>
           <button data-tab="licenses">Licenses</button>
+          <button data-tab="reports">Reports</button>
           <button data-tab="settings">Settings</button>
         </div>
 
@@ -420,6 +421,46 @@
           </div>
         </div>
 
+        <div id="tab-reports" class="hidden">
+          <p class="hint">Pick a predefined report, generate a preview, then export it as PDF or Excel.</p>
+          <div class="toolbar">
+            <div class="narrow">
+              <label>Report on</label>
+              <select id="reportSource">
+                <option value="policies">Policies</option>
+                <option value="agents">Agents</option>
+                <option value="licenses">Licenses</option>
+              </select>
+            </div>
+            <div>
+              <label>Predefined report</label>
+              <select id="reportType"></select>
+            </div>
+            <button id="generateReportBtn" class="teal">Generate report</button>
+          </div>
+          <div class="toolbar" id="reportDateRange">
+            <div class="narrow">
+              <label>Expiry from</label>
+              <input id="reportFrom" type="date" />
+            </div>
+            <div class="narrow">
+              <label>Expiry to</label>
+              <input id="reportTo" type="date" />
+            </div>
+          </div>
+          <div id="reportSummary" class="hint" style="font-weight:700;color:var(--ink)">No report generated yet.</div>
+          <div class="settings-actions" style="margin-bottom:14px">
+            <button id="exportExcelBtn" class="teal" disabled>Export Excel</button>
+            <button id="exportPdfBtn" class="ok" disabled>Export PDF</button>
+          </div>
+          <div class="table-scroll">
+          <table>
+            <thead id="reportTableHead"></thead>
+            <tbody id="reportTableBody"></tbody>
+          </table>
+          </div>
+        </div>
+
         <div id="tab-settings" class="hidden">
           <div id="settingsFlash" class="flash hidden"></div>
           <div id="settingsErr" class="err"></div>
@@ -521,6 +562,9 @@
     </div>
   </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script>
 async function api(path, opts = {}) {
   const res = await fetch(path, {
@@ -663,6 +707,7 @@ function showTab(tab) {
   document.getElementById('tab-resets').classList.toggle('hidden', tab !== 'resets');
   document.getElementById('tab-policies').classList.toggle('hidden', tab !== 'policies');
   document.getElementById('tab-licenses').classList.toggle('hidden', tab !== 'licenses');
+  document.getElementById('tab-reports').classList.toggle('hidden', tab !== 'reports');
   document.getElementById('tab-settings').classList.toggle('hidden', tab !== 'settings');
   if (tab === 'settings') loadSettings();
   const lists = document.getElementById('listsCard');
@@ -1316,6 +1361,168 @@ function esc(s) {
 function escAttr(s) {
   return esc(s).replace(/'/g, '');
 }
+
+/* ---------- Reports ---------- */
+function agentAccessStatus(a) {
+  return a.accessStatus || (a.licensed ? 'LICENSED' : (a.onTrial ? 'TRIAL' : 'EXPIRED'));
+}
+
+const REPORT_DEFS = {
+  policies: [
+    { value: 'expiring30', label: 'Expiring within 30 days', filter: p => {
+      if (p.isDraft || p.status === 'RENEWED') return false;
+      if (!p.expiryDate) return false;
+      const today = new Date(); today.setHours(0,0,0,0);
+      const in30 = new Date(today); in30.setDate(in30.getDate() + 30);
+      const e = new Date(p.expiryDate + 'T00:00:00');
+      return !Number.isNaN(e.getTime()) && e >= today && e <= in30;
+    } },
+    { value: 'expired', label: 'Expired (not renewed)', filter: p => {
+      if (p.isDraft) return false;
+      if (!p.expiryDate) return false;
+      const today = new Date(); today.setHours(0,0,0,0);
+      const e = new Date(p.expiryDate + 'T00:00:00');
+      return !Number.isNaN(e.getTime()) && e < today;
+    } },
+    { value: 'renewed', label: 'Renewed', filter: p => p.status === 'RENEWED' || !!p.renewedAt },
+    { value: 'all', label: 'All policies', filter: () => true }
+  ],
+  agents: [
+    { value: 'trial', label: 'On trial', filter: a => agentAccessStatus(a) === 'TRIAL' },
+    { value: 'licensed', label: 'Licensed', filter: a => agentAccessStatus(a) === 'LICENSED' },
+    { value: 'expired', label: 'Trial/license expired', filter: a => agentAccessStatus(a) === 'EXPIRED' },
+    { value: 'disabled', label: 'Disabled accounts', filter: a => !a.enabled },
+    { value: 'all', label: 'All agents', filter: () => true }
+  ],
+  licenses: [
+    { value: 'active', label: 'Active', filter: l => l.status === 'ACTIVE' },
+    { value: 'unused', label: 'Unused (unassigned)', filter: l => l.status === 'UNUSED' },
+    { value: 'expiredRevoked', label: 'Expired / revoked', filter: l => l.status === 'EXPIRED' || l.status === 'REVOKED' },
+    { value: 'all', label: 'All licenses', filter: () => true }
+  ]
+};
+
+const REPORT_COLUMNS = {
+  policies: [
+    ['Customer', p => p.customerName || '—'],
+    ['Mobile', p => p.customerMobile || '—'],
+    ['NIC', p => p.customerNic || '—'],
+    ['Vehicle', p => p.vehicleNumber || '—'],
+    ['Expiry', p => p.expiryDate || '—'],
+    ['Status', p => p.status || '—'],
+    ['Agent ID', p => p.agentId || '—']
+  ],
+  agents: [
+    ['Full name', a => a.fullName || '—'],
+    ['Email', a => a.email || '—'],
+    ['Mobile', a => a.mobile || '—'],
+    ['Enabled', a => a.enabled ? 'Yes' : 'No'],
+    ['Access', a => agentAccessStatus(a)],
+    ['Trial ends', a => a.trialExpiresAt ? new Date(a.trialExpiresAt).toLocaleDateString() : '—'],
+    ['Policies', a => a.policyCount != null ? a.policyCount : '—']
+  ],
+  licenses: [
+    ['License key', l => l.licenseKey || '—'],
+    ['Status', l => l.status || '—'],
+    ['Agent', l => l.agentName || '—'],
+    ['Agent email', l => l.agentEmail || '—'],
+    ['Issued', l => fmtDate(l.issuedAt)],
+    ['Expires', l => l.expiresAt ? fmtDate(l.expiresAt) : 'On activation'],
+    ['Notes', l => l.notes || '—']
+  ]
+};
+
+let currentReport = null;
+
+function populateReportTypes() {
+  const source = document.getElementById('reportSource').value;
+  const sel = document.getElementById('reportType');
+  sel.innerHTML = (REPORT_DEFS[source] || [])
+    .map(d => '<option value="' + escAttr(d.value) + '">' + esc(d.label) + '</option>')
+    .join('');
+  document.getElementById('reportDateRange').classList.toggle('hidden', source !== 'policies');
+}
+
+async function generateReport() {
+  const source = document.getElementById('reportSource').value;
+  const type = document.getElementById('reportType').value;
+  const def = (REPORT_DEFS[source] || []).find(d => d.value === type);
+  if (!def) return;
+  const endpoint = source === 'policies' ? '/api/admin/policies'
+    : source === 'agents' ? '/api/admin/agents'
+    : '/api/admin/licenses';
+  const raw = await api(endpoint);
+  let rows = (Array.isArray(raw) ? raw : []).filter(def.filter);
+  if (source === 'policies') {
+    const from = document.getElementById('reportFrom').value;
+    const to = document.getElementById('reportTo').value;
+    if (from) rows = rows.filter(p => p.expiryDate && p.expiryDate >= from);
+    if (to) rows = rows.filter(p => p.expiryDate && p.expiryDate <= to);
+  }
+  currentReport = { source, title: def.label, rows, columns: REPORT_COLUMNS[source] };
+  renderReportPreview();
+}
+
+function renderReportPreview() {
+  const { title, rows, columns } = currentReport;
+  const summary = document.getElementById('reportSummary');
+  summary.textContent = title + ' — ' + rows.length + ' record' + (rows.length === 1 ? '' : 's');
+  document.getElementById('reportTableHead').innerHTML =
+    '<tr>' + columns.map(c => '<th>' + esc(c[0]) + '</th>').join('') + '</tr>';
+  document.getElementById('reportTableBody').innerHTML = rows.length
+    ? rows.map(r => '<tr>' + columns.map(c => '<td>' + esc(c[1](r)) + '</td>').join('') + '</tr>').join('')
+    : '<tr><td colspan="' + columns.length + '">No records match this report.</td></tr>';
+  const hasRows = rows.length > 0;
+  document.getElementById('exportPdfBtn').disabled = !hasRows;
+  document.getElementById('exportExcelBtn').disabled = !hasRows;
+}
+
+function reportFileBase(title) {
+  return 'RenewGuard-' + title.replace(/[^a-z0-9]+/gi, '-').replace(/(^-|-$)/g, '') +
+    '-' + new Date().toISOString().slice(0, 10);
+}
+
+function exportReportExcel() {
+  if (!currentReport || !currentReport.rows.length) return;
+  const { title, rows, columns } = currentReport;
+  const data = rows.map(r => {
+    const obj = {};
+    columns.forEach(c => { obj[c[0]] = c[1](r); });
+    return obj;
+  });
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Report');
+  XLSX.writeFile(wb, reportFileBase(title) + '.xlsx');
+}
+
+function exportReportPdf() {
+  if (!currentReport || !currentReport.rows.length) return;
+  const { title, rows, columns } = currentReport;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: columns.length > 5 ? 'landscape' : 'portrait' });
+  doc.setFontSize(14);
+  doc.text('RenewGuard — ' + title, 14, 16);
+  doc.setFontSize(9);
+  doc.setTextColor(100);
+  doc.text('Generated ' + new Date().toLocaleString(), 14, 22);
+  doc.autoTable({
+    startY: 28,
+    head: [columns.map(c => c[0])],
+    body: rows.map(r => columns.map(c => String(c[1](r)))),
+    styles: { fontSize: 8 },
+    headStyles: { fillColor: [18, 161, 80] }
+  });
+  doc.save(reportFileBase(title) + '.pdf');
+}
+
+document.getElementById('reportSource').onchange = populateReportTypes;
+document.getElementById('generateReportBtn').onclick = () => {
+  generateReport().catch(e => alert(e.message || 'Could not generate report'));
+};
+document.getElementById('exportExcelBtn').onclick = exportReportExcel;
+document.getElementById('exportPdfBtn').onclick = exportReportPdf;
+populateReportTypes();
 
 checkSession();
 </script>
