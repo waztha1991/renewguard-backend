@@ -1,13 +1,8 @@
-# RenewGuard — production image for Cloudflare Containers / Docker
+# RenewGuard Backend — image for Cloudflare Containers / Docker
 # Build context: repository root
-#   docker build -f Dockerfile -t renewguard .
-
-FROM node:22-bookworm AS web
-WORKDIR /web
-COPY web/package.json web/package-lock.json ./
-RUN npm ci
-COPY web/ ./
-RUN npm run build
+#   docker build -f Dockerfile -t renewguard-backend .
+# Note: the agent web portal (formerly built here) now lives in the
+# separate renewguard-web repo and is deployed independently.
 
 FROM eclipse-temurin:21-jdk-jammy AS backend
 WORKDIR /src
@@ -24,12 +19,10 @@ FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 RUN mkdir -p /data
 COPY --from=backend /src/backend/build/install/backend/ /app/
-COPY --from=web /web/dist /app/web-dist
 
 ENV HOST=0.0.0.0
 ENV PORT=8080
 ENV DATA_DIR=/data
-ENV WEB_DIST=/app/web-dist
 ENV SECURE_COOKIES=true
 
 EXPOSE 8080
