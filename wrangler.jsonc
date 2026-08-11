@@ -7,6 +7,12 @@
   "observability": {
     "enabled": true
   },
+  "routes": [
+    {
+      "pattern": "api-dev.renewguard.antsolutions.uk",
+      "custom_domain": true
+    }
+  ],
   "containers": [
     {
       "class_name": "RenewGuardContainer",
