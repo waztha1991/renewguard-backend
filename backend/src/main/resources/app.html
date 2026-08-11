@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RenewGuard — Agent Portal</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230e7c72'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-family='Arial,sans-serif' font-size='27' font-weight='700' fill='%23ffffff'%3ERG%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #0c1e2e;
+      --ink-soft: #1a3348;
+      --teal: #0e7c72;
+      --teal-bright: #12a193;
+      --teal-mist: #d5f5f0;
+      --sand: #eef3f7;
+      --paper: #ffffff;
+      --muted: #5b6f7e;
+      --line: #d0dbe5;
+      --danger: #c62828;
+      --ok: #1b7a4a;
+      --warn: #b86e00;
+      --u30: #0e7c72;
+      --u15: #b86e00;
+      --u7: #c45c00;
+      --uexp: #c62828;
+      --shadow: 0 12px 40px rgba(12, 30, 46, 0.1);
+      --radius: 14px;
+      --font: "DM Sans", system-ui, sans-serif;
+      --display: "Source Serif 4", Georgia, serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 500px at 10% -10%, rgba(18, 161, 147, 0.18), transparent 55%),
+        radial-gradient(900px 400px at 100% 0%, rgba(12, 30, 46, 0.12), transparent 50%),
+        linear-gradient(180deg, #d9e6ef 0%, var(--sand) 28%, #f7fafc 100%);
+      min-height: 100vh;
+    }
+    a { color: var(--teal); }
+    button, input, select, textarea { font: inherit; }
+    button {
+      border: none; border-radius: 10px; padding: 10px 14px;
+      background: var(--ink); color: #e8f7f4; font-weight: 600; cursor: pointer;
+    }
+    button:hover { filter: brightness(1.06); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button.secondary { background: #d9e4ee; color: var(--ink); }
+    button.teal { background: var(--teal); color: white; }
+    button.danger { background: var(--danger); color: white; }
+    button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+    button.sm { padding: 6px 10px; font-size: 0.85rem; }
+    input, select, textarea {
+      width: 100%; padding: 10px 12px; border-radius: 10px;
+      border: 1px solid var(--line); background: white; margin-bottom: 10px;
+    }
+    label { display: block; font-size: 0.8rem; color: var(--muted); margin: 0 0 4px; font-weight: 500; }
+    .hidden { display: none !important; }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 20px 16px 80px; }
+    .brand-mark {
+      font-family: var(--display); font-size: clamp(2rem, 5vw, 2.75rem);
+      font-weight: 700; letter-spacing: -0.03em; margin: 0; color: var(--ink);
+    }
+    .brand-mark span { color: var(--teal); }
+    .eyebrow {
+      text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.72rem;
+      font-weight: 700; color: var(--teal); margin: 0 0 8px;
+    }
+    .lead { color: var(--muted); margin: 6px 0 0; max-width: 36rem; line-height: 1.45; }
+    .panel {
+      background: var(--paper); border-radius: var(--radius); box-shadow: var(--shadow);
+      border: 1px solid rgba(208, 219, 229, 0.8); padding: 20px; margin-top: 18px;
+      animation: rise 0.45s ease both;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: none; }
+    }
+    .auth-shell { max-width: 440px; margin: 48px auto 0; }
+    .auth-shell .panel { padding: 28px 24px; }
+    .tabs-row { display: flex; gap: 8px; margin-bottom: 16px; }
+    .tabs-row button { flex: 1; background: #e4edf5; color: var(--ink); }
+    .tabs-row button.active { background: var(--teal); color: white; }
+    .err { color: var(--danger); font-size: 0.9rem; margin-top: 8px; }
+    .okmsg { color: var(--ok); font-size: 0.9rem; margin-top: 8px; }
+    .topbar {
+      display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+      justify-content: space-between; margin-bottom: 8px;
+    }
+    .nav {
+      display: flex; flex-wrap: wrap; gap: 6px; background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(8px); border: 1px solid var(--line); border-radius: 12px; padding: 6px;
+    }
+    .nav button { background: transparent; color: var(--ink-soft); font-weight: 600; }
+    .nav button.active { background: var(--ink); color: #dff7f2; }
+    .banner {
+      margin-top: 12px; padding: 10px 14px; border-radius: 10px; font-size: 0.92rem; font-weight: 600;
+    }
+    .banner.trial { background: #fff4df; color: #8a5200; border: 1px solid #f0d39a; }
+    .banner.licensed { background: var(--teal-mist); color: #0a5c54; border: 1px solid #9adfd6; }
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: end; margin: 14px 0; }
+    .toolbar > div { flex: 1; min-width: 180px; }
+    .toolbar input { margin: 0; }
+    .section-h {
+      display: flex; align-items: center; gap: 10px; margin: 22px 0 10px;
+      font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot.u30 { background: var(--u30); }
+    .dot.u15 { background: var(--u15); }
+    .dot.u7 { background: var(--u7); }
+    .dot.uexp { background: var(--uexp); }
+    .dot.active { background: #64748b; }
+    .dot.draft { background: #94a3b8; }
+    .dot.renewed { background: var(--ok); }
+    .policy-list { display: grid; gap: 10px; }
+    .policy-card {
+      display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center;
+      padding: 14px 16px; border-radius: 12px; border: 1px solid var(--line);
+      background: linear-gradient(135deg, #fff, #f7fbfd); cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .policy-card:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(12,30,46,0.08); }
+    .policy-card h3 { margin: 0 0 4px; font-size: 1.05rem; }
+    .policy-card .meta { color: var(--muted); font-size: 0.86rem; }
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 999px;
+      font-size: 0.72rem; font-weight: 700;
+    }
+    .badge.EXPIRING_SOON, .badge.warn { background: #fff1d6; color: #8a5200; }
+    .badge.EXPIRED { background: #ffe2e2; color: #9b1c1c; }
+    .badge.ACTIVE { background: #dcfce7; color: #166534; }
+    .badge.DRAFT { background: #e2e8f0; color: #334155; }
+    .badge.RENEWED { background: #ccfbf1; color: #0f766e; }
+    .row-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    @media (max-width: 720px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .policy-card { grid-template-columns: 1fr; }
+    }
+    .form-section { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .form-section h3 { margin: 0 0 12px; font-family: var(--display); font-size: 1.2rem; }
+    .doc-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+    .thumb {
+      width: 72px; height: 72px; object-fit: cover; border-radius: 10px;
+      border: 1px solid var(--line); background: #f1f5f9;
+    }
+    .thumb-link {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 72px; height: 72px; border-radius: 10px; border: 1px dashed var(--line);
+      color: var(--muted); font-size: 0.75rem; text-align: center; text-decoration: none;
+    }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+    .stat {
+      background: #f5f9fc; border: 1px solid var(--line); border-radius: 12px; padding: 12px;
+    }
+    .stat b { display: block; font-size: 1.4rem; color: var(--ink); }
+    .stat span { color: var(--muted); font-size: 0.78rem; }
+    .empty { color: var(--muted); padding: 18px 4px; }
+    .fab {
+      position: fixed; right: 18px; bottom: 18px; width: 56px; height: 56px;
+      border-radius: 50%; background: var(--ink); color: var(--teal-mist);
+      font-size: 1.6rem; box-shadow: var(--shadow); z-index: 20;
+    }
+    .detail-hero {
+      background: linear-gradient(135deg, var(--ink) 0%, #16455a 55%, var(--teal) 100%);
+      color: #e8f7f4; border-radius: var(--radius); padding: 22px 20px; margin-top: 12px;
+      animation: rise 0.4s ease both;
+    }
+    .detail-hero h2 { margin: 0 0 6px; font-family: var(--display); font-size: 1.6rem; }
+    .detail-hero p { margin: 0; opacity: 0.85; }
+    .kv { display: grid; grid-template-columns: 140px 1fr; gap: 6px 12px; font-size: 0.95rem; }
+    .kv dt { color: var(--muted); }
+    .kv dd { margin: 0; font-weight: 500; }
+    .reminder-item {
+      border-left: 3px solid var(--teal); padding: 8px 12px; margin-bottom: 8px;
+      background: #f7fbfd; border-radius: 0 10px 10px 0;
+    }
+    .modal-bg {
+      position: fixed; inset: 0; background: rgba(12,30,46,0.45);
+      display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px;
+    }
+    .modal {
+      background: white; border-radius: 14px; padding: 20px; max-width: 420px; width: 100%;
+      box-shadow: var(--shadow);
+    }
+    .linkish { background: none; border: none; color: var(--teal); padding: 0; font-weight: 600; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="wrap" id="root"></div>
+  <div id="modalHost"></div>
+  <script>
+(function () {
+  const API = "/api/app";
+  const TITLES = ["MR", "MRS", "MISS", "MS", "DR", "REV"];
+  const VEHICLES = ["MOTOR_BIKE", "CAR", "THREE_WHEELER", "VAN", "LORRY", "BUS", "OTHER"];
+  const RELS = ["SPOUSE", "CHILD", "PARENT", "SIBLING", "OTHER"];
+
+  const state = {
+    view: "boot",
+    me: null,
+    policies: [],
+    query: "",
+    editingId: null,
+    detailId: null,
+    reminders: [],
+    reports: null,
+    form: emptyForm(),
+    msg: "",
+    err: "",
+    loading: false
+  };
+
+  function emptyForm() {
+    const today = isoToday();
+    return {
+      id: "",
+      isDraft: false,
+      title: "MR",
+      customerName: "",
+      customerEmail: "",
+      customerMobile: "",
+      customerNic: "",
+      addressLine1: "",
+      addressLine2: "",
+      addressLine3: "",
+      vehicleType: "MOTOR_BIKE",
+      vehicleNumber: "",
+      beneficiaryName: "",
+      beneficiaryNic: "",
+      beneficiaryRelationship: "SPOUSE",
+      nicFrontPath: null,
+      nicRearPath: null,
+      vrcPath: null,
+      issueDate: today,
+      expiryDate: addYears(today, 1),
+      status: "ACTIVE",
+      createdAt: 0,
+      renewedAt: null
+    };
+  }
+
+  function isoToday() {
+    return new Date().toISOString().slice(0, 10);
+  }
+  function addYears(iso, y) {
+    const d = new Date(iso + "T12:00:00");
+    d.setFullYear(d.getFullYear() + y);
+    return d.toISOString().slice(0, 10);
+  }
+  function daysUntil(expiry) {
+    if (!expiry) return null;
+    const e = new Date(expiry + "T12:00:00");
+    const t = new Date();
+    t.setHours(12, 0, 0, 0);
+    return Math.round((e - t) / 86400000);
+  }
+  function displayDate(iso) {
+    if (!iso) return "—";
+    const d = new Date(iso + "T12:00:00");
+    return d.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
+  }
+  function fmtWhen(ms) {
+    return new Date(ms).toLocaleString();
+  }
+  function fileUrl(path) {
+    if (!path) return null;
+    if (path.startsWith("http") || path.startsWith("/")) return path;
+    return API + "/files/" + path;
+  }
+  function isImagePath(path) {
+    return /\.(png|jpe?g|gif|webp)$/i.test(path || "");
+  }
+  function normalizeMobile(raw) {
+    const digits = String(raw || "").replace(/[^\d+]/g, "");
+    if (digits.startsWith("+")) return digits;
+    const d = digits.replace(/\D/g, "");
+    if (d.length === 10 && d.startsWith("0")) return "+94" + d.slice(1);
+    if (d.length === 9) return "+94" + d;
+    if (d.length === 11 && d.startsWith("94")) return "+" + d;
+    return digits;
+  }
+  function waDigits(mobile) {
+    return normalizeMobile(mobile).replace(/\D/g, "");
+  }
+  function uuid() {
+    if (crypto.randomUUID) return crypto.randomUUID();
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0;
+      return (c === "x" ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+  }
+  function reminderMessage(p) {
+    const days = daysUntil(p.expiryDate);
+    let urgency = "is due for renewal soon";
+    if (days == null) urgency = "is due for renewal soon";
+    else if (days < 0) urgency = "has expired";
+    else if (days === 0) urgency = "expires today";
+    else if (days === 1) urgency = "expires tomorrow";
+    else urgency = "expires in " + days + " days";
+    return "Dear " + p.customerName + ", your motor insurance for " + p.vehicleNumber + " " + urgency +
+      " (" + displayDate(p.expiryDate) + "). Please contact your agent to renew. Thank you.";
+  }
+
+  async function api(path, opts = {}) {
+    const res = await fetch(API + path, {
+      credentials: "include",
+      headers: opts.body && !(opts.body instanceof FormData)
+        ? { "Content-Type": "application/json", ...(opts.headers || {}) }
+        : (opts.headers || {}),
+      ...opts,
+      body: opts.body && !(opts.body instanceof FormData) && typeof opts.body !== "string"
+        ? JSON.stringify(opts.body)
+        : opts.body
+    });
+    const text = await res.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch { data = { error: text }; }
+    if (!res.ok) {
+      const err = new Error((data && (data.error || data.message)) || ("Request failed (" + res.status + ")"));
+      err.status = res.status;
+      err.data = data;
+      throw err;
+    }
+    return data;
+  }
+
+  function setView(v) {
+    state.view = v;
+    state.err = "";
+    state.msg = "";
+    render();
+  }
+
+  function groupPolicies(list) {
+    const q = state.query.trim().toLowerCase();
+    const filtered = list.filter(p => {
+      if (!q) return true;
+      return [p.customerName, p.vehicleNumber, p.customerNic, p.customerMobile]
+        .join(" ").toLowerCase().includes(q);
+    });
+    const drafts = [], renewed = [], expired = [], d7 = [], d15 = [], d30 = [], active = [];
+    filtered.forEach(p => {
+      if (p.isDraft) { drafts.push(p); return; }
+      if (p.status === "RENEWED") { renewed.push(p); return; }
+      const days = daysUntil(p.expiryDate);
+      if (days == null) active.push(p);
+      else if (days < 0) expired.push(p);
+      else if (days <= 7) d7.push(p);
+      else if (days <= 15) d15.push(p);
+      else if (days <= 30) d30.push(p);
+      else active.push(p);
+    });
+    const byExp = a => a.sort((x, y) => (x.expiryDate || "").localeCompare(y.expiryDate || ""));
+    return {
+      expiring7: byExp(d7),
+      expiring15: byExp(d15),
+      expiring30: byExp(d30),
+      expired: byExp(expired),
+      active: byExp(active),
+      drafts: drafts.sort((a, b) => b.updatedAt - a.updatedAt),
+      renewed: renewed.sort((a, b) => (b.renewedAt || b.updatedAt) - (a.renewedAt || a.updatedAt))
+    };
+  }
+
+  async function boot() {
+    try {
+      state.me = await api("/me");
+      if (!state.me.accessGranted) setView("license");
+      else {
+        await loadPolicies();
+        setView("dashboard");
+      }
+    } catch {
+      setView("login");
+    }
+  }
+
+  async function loadPolicies() {
+    state.policies = await api("/policies");
+  }
+
+  async function loadDetail(id) {
+    state.detailId = id;
+    const p = await api("/policies/" + id);
+    state.form = { ...emptyForm(), ...p };
+    state.reminders = await api("/policies/" + id + "/reminders");
+    setView("detail");
+  }
+
+  function startNew() {
+    state.editingId = null;
+    state.form = emptyForm();
+    state.form.id = uuid();
+    setView("form");
+  }
+
+  function startEdit(p) {
+    state.editingId = p.id;
+    state.form = { ...emptyForm(), ...p };
+    setView("form");
+  }
+
+  function policyCard(p) {
+    const days = daysUntil(p.expiryDate);
+    const dayLabel = days == null ? "" : days < 0 ? Math.abs(days) + "d overdue" : days + "d left";
+    return `<div class="policy-card" data-open="${p.id}">
+      <div>
+        <h3>${esc(p.customerName || "Untitled")}</h3>
+        <div class="meta">${esc(p.vehicleNumber)} · ${esc(p.vehicleType.replace(/_/g, " "))} · Exp ${displayDate(p.expiryDate)}
+          ${dayLabel ? " · " + dayLabel : ""}</div>
+        <div style="margin-top:6px"><span class="badge ${esc(p.status)}">${esc(p.status)}</span></div>
+      </div>
+      <div class="row-actions" onclick="event.stopPropagation()">
+        ${p.customerMobile ? `<a href="tel:${esc(normalizeMobile(p.customerMobile))}"><button class="sm teal" type="button">Call</button></a>` : ""}
+      </div>
+    </div>`;
+  }
+
+  function section(title, cls, items) {
+    if (!items.length) return "";
+    return `<div class="section-h"><span class="dot ${cls}"></span>${esc(title)} (${items.length})</div>
+      <div class="policy-list">${items.map(policyCard).join("")}</div>`;
+  }
+
+  function shell(content, activeNav) {
+    const me = state.me;
+    const banner = me?.onTrial
+      ? `<div class="banner trial">Free trial — ${me.trialDaysLeft ?? "?"} days left. Activate a license anytime in Settings.</div>`
+      : me?.licensed
+        ? `<div class="banner licensed">Licensed · ${esc(me.licenseMessage || "Active")}</div>`
+        : "";
+    return `
+      <div class="topbar">
+        <div>
+          <p class="eyebrow">Agent portal</p>
+          <h1 class="brand-mark">Renew<span>Guard</span></h1>
+          <p class="lead">${me ? "Welcome, " + esc(me.agent.fullName) : ""}</p>
+        </div>
+        <nav class="nav">
+          <button data-nav="dashboard" class="${activeNav === "dashboard" ? "active" : ""}">Dashboard</button>
+          <button data-nav="form" class="${activeNav === "form" ? "active" : ""}">New policy</button>
+          <button data-nav="reports" class="${activeNav === "reports" ? "active" : ""}">Reports</button>
+          <button data-nav="settings" class="${activeNav === "settings" ? "active" : ""}">Settings</button>
+        </nav>
+      </div>
+      ${banner}
+      ${content}
+      ${activeNav === "dashboard" ? `<button class="fab" id="fabNew" title="New policy">+</button>` : ""}
+    `;
+  }
+
+  function renderAuth(mode) {
+    const isReg = mode === "register";
+    const isForgot = mode === "forgot";
+    return `<div class="auth-shell">
+      <p class="eyebrow">Insurance agents</p>
+      <h1 class="brand-mark">Renew<span>Guard</span></h1>
+      <p class="lead">Track motor renewals, remind customers, and manage your book from any browser.</p>
+      <div class="panel">
+        <div class="tabs-row">
+          <button class="${!isReg && !isForgot ? "active" : ""}" data-auth="login">Sign in</button>
+          <button class="${isReg ? "active" : ""}" data-auth="register">Register</button>
+        </div>
+        ${isForgot ? `
+          <h2 style="margin-top:0">Forgot password</h2>
+          <p class="lead" style="margin-bottom:14px">We’ll notify admin. They’ll set a temporary password and share it with you offline.</p>
+          <label>Email or mobile</label>
+          <input id="forgotId" autocomplete="username" />
+          <button id="forgotBtn" style="width:100%">Request reset</button>
+          <p style="margin-top:12px"><button class="linkish" data-auth="login">Back to sign in</button></p>
+        ` : isReg ? `
+          <label>Full name</label><input id="regName" />
+          <label>Email</label><input id="regEmail" type="email" autocomplete="email" />
+          <label>Mobile</label><input id="regMobile" autocomplete="tel" placeholder="07XXXXXXXX" />
+          <label>Password (min 6)</label><input id="regPass" type="password" autocomplete="new-password" />
+          <button id="regBtn" style="width:100%" class="teal">Create account</button>
+        ` : `
+          <label>Email or mobile</label><input id="loginId" autocomplete="username" />
+          <label>Password</label><input id="loginPass" type="password" autocomplete="current-password" />
+          <button id="loginBtn" style="width:100%" class="teal">Sign in</button>
+          <p style="margin-top:12px"><button class="linkish" data-auth="forgot">Forgot password?</button></p>
+        `}
+        <div class="err" id="authErr">${esc(state.err)}</div>
+        <div class="okmsg" id="authOk">${esc(state.msg)}</div>
+      </div>
+      <p style="text-align:center;color:var(--muted);font-size:0.85rem;margin-top:16px">
+        Admin panel is at <a href="/admin">/admin</a>
+      </p>
+    </div>`;
+  }
+
+  function renderLicense() {
+    return shell(`
+      <div class="panel" style="max-width:480px">
+        <h2 style="margin-top:0;font-family:var(--display)">Activate license</h2>
+        <p class="lead" style="margin-bottom:14px">${esc(state.me?.licenseMessage || "Your trial has ended. Enter a company license key to continue.")}</p>
+        <label>License key</label>
+        <input id="licKey" placeholder="RG-XXXX-XXXX-XXXX" class="mono" style="letter-spacing:0.06em;text-transform:uppercase" />
+        <button id="licBtn" class="teal" style="width:100%">Activate license</button>
+        <div class="err">${esc(state.err)}</div>
+        <div class="okmsg">${esc(state.msg)}</div>
+        <p style="margin-top:16px"><button class="secondary" id="logoutBtn">Log out</button></p>
+      </div>
+    `, "settings");
+  }
+
+  function renderDashboard() {
+    const g = groupPolicies(state.policies);
+    return shell(`
+      <div class="toolbar">
+        <div>
+          <label>Search policies</label>
+          <input id="searchQ" placeholder="Name, vehicle, NIC, mobile" value="${esc(state.query)}" />
+        </div>
+        <button id="refreshBtn" class="secondary">Refresh</button>
+      </div>
+      <div class="panel">
+        ${section("Expires within 7 days", "u7", g.expiring7)}
+        ${section("Expires within 15 days", "u15", g.expiring15)}
+        ${section("Expires within 30 days", "u30", g.expiring30)}
+        ${section("Expired", "uexp", g.expired)}
+        ${section("Active", "active", g.active)}
+        ${section("Drafts", "draft", g.drafts)}
+        ${section("Renewed", "renewed", g.renewed)}
+        ${!state.policies.length ? `<p class="empty">No policies yet. Tap + to create your first intake.</p>` : ""}
+      </div>
+    `, "dashboard");
+  }
+
+  function formFields(f) {
+    return `
+      <div class="form-section">
+        <h3>Customer</h3>
+        <div class="grid-3">
+          <div><label>Title</label><select id="f_title">${TITLES.map(t => `<option ${f.title===t?"selected":""}>${t}</option>`).join("")}</select></div>
+          <div style="grid-column:span 2"><label>Full name</label><input id="f_customerName" value="${esc(f.customerName)}" /></div>
+        </div>
+        <div class="grid-2">
+          <div><label>Email</label><input id="f_customerEmail" type="email" value="${esc(f.customerEmail)}" /></div>
+          <div><label>Mobile</label><input id="f_customerMobile" value="${esc(f.customerMobile)}" placeholder="07XXXXXXXX" /></div>
+        </div>
+        <label>NIC</label><input id="f_customerNic" value="${esc(f.customerNic)}" />
+      </div>
+      <div class="form-section">
+        <h3>Address</h3>
+        <label>Line 1</label><input id="f_addressLine1" value="${esc(f.addressLine1)}" />
+        <label>Line 2</label><input id="f_addressLine2" value="${esc(f.addressLine2)}" />
+        <label>Line 3</label><input id="f_addressLine3" value="${esc(f.addressLine3)}" />
+      </div>
+      <div class="form-section">
+        <h3>Vehicle</h3>
+        <div class="grid-2">
+          <div><label>Type</label><select id="f_vehicleType">${VEHICLES.map(t => `<option value="${t}" ${f.vehicleType===t?"selected":""}>${t.replace(/_/g," ")}</option>`).join("")}</select></div>
+          <div><label>Number</label><input id="f_vehicleNumber" value="${esc(f.vehicleNumber)}" placeholder="CAA-1234" /></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <h3>Beneficiary</h3>
+        <label>Name</label><input id="f_beneficiaryName" value="${esc(f.beneficiaryName)}" />
+        <div class="grid-2">
+          <div><label>NIC</label><input id="f_beneficiaryNic" value="${esc(f.beneficiaryNic)}" /></div>
+          <div><label>Relationship</label><select id="f_beneficiaryRelationship">${RELS.map(t => `<option ${f.beneficiaryRelationship===t?"selected":""}>${t}</option>`).join("")}</select></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <h3>Documents</h3>
+        ${docField("NIC front", "nicFrontPath", f.nicFrontPath)}
+        ${docField("NIC rear", "nicRearPath", f.nicRearPath)}
+        ${docField("VRC", "vrcPath", f.vrcPath)}
+      </div>
+      <div class="form-section">
+        <h3>Policy dates</h3>
+        <div class="grid-3">
+          <div><label>Issue</label><input id="f_issueDate" type="date" value="${esc(f.issueDate)}" /></div>
+          <div><label>Expiry</label><input id="f_expiryDate" type="date" value="${esc(f.expiryDate)}" /></div>
+          <div><label>Status</label>
+            <select id="f_status">
+              ${["DRAFT","ACTIVE","EXPIRING_SOON","EXPIRED","RENEWED"].map(s => `<option ${f.status===s?"selected":""}>${s}</option>`).join("")}
+            </select>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function docField(label, key, path) {
+    const url = fileUrl(path);
+    const preview = url
+      ? (isImagePath(path)
+        ? `<img class="thumb" src="${esc(url)}" alt="${esc(label)}" />`
+        : `<a class="thumb-link" href="${esc(url)}" target="_blank" rel="noopener">Open</a>`)
+      : `<span class="thumb-link">None</span>`;
+    return `<div class="doc-row" data-doc="${key}">
+      ${preview}
+      <div style="flex:1;min-width:160px">
+        <label>${esc(label)}</label>
+        <input type="file" accept="image/*,.pdf" data-upload="${key}" />
+      </div>
+    </div>`;
+  }
+
+  function renderForm() {
+    const f = state.form;
+    const isEdit = !!state.editingId;
+    return shell(`
+      <div class="panel">
+        <h2 style="margin-top:0;font-family:var(--display)">${isEdit ? "Edit policy" : "New policy intake"}</h2>
+        ${formFields(f)}
+        <div class="row-actions" style="margin-top:16px">
+          <button id="savePolicy" class="teal">Save policy</button>
+          <button id="saveDraft" class="secondary">Save as draft</button>
+          <button id="cancelForm" class="ghost">Cancel</button>
+        </div>
+        <div class="err">${esc(state.err)}</div>
+        <div class="okmsg">${esc(state.msg)}</div>
+      </div>
+    `, "form");
+  }
+
+  function renderDetail() {
+    const p = state.form;
+    const mobile = normalizeMobile(p.customerMobile || "");
+    const msg = encodeURIComponent(reminderMessage(p));
+    const wa = "https://wa.me/" + waDigits(p.customerMobile || "") + "?text=" + msg;
+    const sms = "sms:" + mobile + "?body=" + msg;
+    return `
+      <div class="topbar">
+        <div>
+          <button class="ghost sm" id="backDash">← Dashboard</button>
+          <div class="detail-hero">
+            <h2>${esc(p.customerName)}</h2>
+            <p>${esc(p.vehicleNumber)} · ${esc(p.vehicleType.replace(/_/g," "))} · Exp ${displayDate(p.expiryDate)}</p>
+            <p style="margin-top:8px"><span class="badge ${esc(p.status)}">${esc(p.status)}</span></p>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="row-actions" style="margin-bottom:14px">
+          <a href="tel:${esc(mobile)}"><button class="teal sm" type="button">Call</button></a>
+          <a href="${esc(sms)}"><button class="secondary sm" type="button">SMS</button></a>
+          <a href="${esc(wa)}" target="_blank" rel="noopener"><button class="secondary sm" type="button">WhatsApp</button></a>
+          <button class="sm" id="logCall">Log call</button>
+          <button class="sm" id="logSms">Log SMS</button>
+          <button class="sm" id="logWa">Log WhatsApp</button>
+        </div>
+        <dl class="kv">
+          <dt>Mobile</dt><dd>${esc(p.customerMobile || "—")}</dd>
+          <dt>Email</dt><dd>${esc(p.customerEmail || "—")}</dd>
+          <dt>NIC</dt><dd>${esc(p.customerNic || "—")}</dd>
+          <dt>Address</dt><dd>${esc([p.addressLine1,p.addressLine2,p.addressLine3].filter(Boolean).join(", ") || "—")}</dd>
+          <dt>Beneficiary</dt><dd>${esc(p.beneficiaryName || "—")} (${esc(p.beneficiaryRelationship)})</dd>
+          <dt>Issue</dt><dd>${displayDate(p.issueDate)}</dd>
+          <dt>Expiry</dt><dd>${displayDate(p.expiryDate)}</dd>
+        </dl>
+        <div class="form-section">
+          <h3>Documents</h3>
+          <div class="doc-row">
+            ${docPreview("NIC front", p.nicFrontPath)}
+            ${docPreview("NIC rear", p.nicRearPath)}
+            ${docPreview("VRC", p.vrcPath)}
+          </div>
+        </div>
+        <div class="row-actions" style="margin-top:16px">
+          <button id="editPolicy" class="teal">Edit</button>
+          <button id="renewPolicy" class="secondary">Mark renewed</button>
+          <button id="deletePolicy" class="danger">Delete</button>
+        </div>
+        <div class="form-section">
+          <h3>Reminder history</h3>
+          ${state.reminders.length
+            ? state.reminders.map(r => `<div class="reminder-item"><strong>${esc(r.channel)}</strong> · ${fmtWhen(r.sentAt)}<div style="color:var(--muted);font-size:0.88rem;margin-top:4px">${esc(r.message)}</div></div>`).join("")
+            : `<p class="empty">No reminders logged yet.</p>`}
+        </div>
+        <div class="err">${esc(state.err)}</div>
+        <div class="okmsg">${esc(state.msg)}</div>
+      </div>
+    `;
+  }
+
+  function docPreview(label, path) {
+    const url = fileUrl(path);
+    if (!url) return `<div><div class="thumb-link">No ${esc(label)}</div></div>`;
+    if (isImagePath(path)) return `<div><img class="thumb" src="${esc(url)}" alt="${esc(label)}" /><div style="font-size:0.75rem;color:var(--muted);margin-top:4px">${esc(label)}</div></div>`;
+    return `<div><a class="thumb-link" href="${esc(url)}" target="_blank">${esc(label)}</a></div>`;
+  }
+
+  function renderReports() {
+    const r = state.reports;
+    if (!r) return shell(`<div class="panel"><p>Loading…</p></div>`, "reports");
+    function block(rep) {
+      return `<div class="panel">
+        <h2 style="margin-top:0;font-family:var(--display)">${esc(rep.periodLabel)}</h2>
+        <div class="stats">
+          <div class="stat"><b>${rep.upcomingRenewals}</b><span>Upcoming</span></div>
+          <div class="stat"><b>${rep.renewedCount}</b><span>Renewed*</span></div>
+          <div class="stat"><b>${rep.lapsedCount}</b><span>Lapsed</span></div>
+          <div class="stat"><b>${rep.activeCount}</b><span>Active</span></div>
+        </div>
+        <p style="color:var(--muted);font-size:0.85rem">* Renewed = marked this calendar month</p>
+        <div class="section-h"><span class="dot u30"></span>Upcoming renewals</div>
+        <div class="policy-list">${rep.policies.length ? rep.policies.map(policyCard).join("") : `<p class="empty">None in this window</p>`}</div>
+      </div>`;
+    }
+    return shell(block(r.weekly) + block(r.monthly), "reports");
+  }
+
+  function renderSettings() {
+    const me = state.me;
+    return shell(`
+      <div class="panel">
+        <h2 style="margin-top:0;font-family:var(--display)">Account</h2>
+        <dl class="kv">
+          <dt>Name</dt><dd>${esc(me.agent.fullName)}</dd>
+          <dt>Email</dt><dd>${esc(me.agent.email)}</dd>
+          <dt>Mobile</dt><dd>${esc(me.agent.mobile)}</dd>
+          <dt>Access</dt><dd>${me.licensed ? "Licensed" : me.onTrial ? "Trial (" + (me.trialDaysLeft ?? "?") + " days left)" : "Expired"}</dd>
+          <dt>License</dt><dd>${esc(me.licenseMessage || "—")}</dd>
+        </dl>
+      </div>
+      <div class="panel">
+        <h3 style="margin-top:0">Activate / renew license</h3>
+        <label>License key</label>
+        <input id="setLicKey" placeholder="RG-XXXX-XXXX-XXXX" style="text-transform:uppercase" />
+        <button id="setLicBtn" class="teal">Activate</button>
+        <div class="okmsg" id="licMsg"></div>
+        <div class="err" id="licErr"></div>
+      </div>
+      <div class="panel">
+        <h3 style="margin-top:0">Change password</h3>
+        <label>Current password</label><input id="curPass" type="password" />
+        <label>New password</label><input id="newPass" type="password" />
+        <label>Confirm new password</label><input id="newPass2" type="password" />
+        <button id="changePassBtn" class="teal">Update password</button>
+        <div class="err" id="passErr"></div>
+        <div class="okmsg" id="passOk"></div>
+      </div>
+      <div class="panel">
+        <button id="logoutBtn" class="danger">Log out</button>
+      </div>
+    `, "settings");
+  }
+
+  function esc(s) {
+    return String(s ?? "").replace(/[&<>"']/g, c => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    })[c]);
+  }
+
+  function render() {
+    const root = document.getElementById("root");
+    switch (state.view) {
+      case "boot": root.innerHTML = `<p class="lead">Loading…</p>`; break;
+      case "login": root.innerHTML = renderAuth("login"); break;
+      case "register": root.innerHTML = renderAuth("register"); break;
+      case "forgot": root.innerHTML = renderAuth("forgot"); break;
+      case "license": root.innerHTML = renderLicense(); break;
+      case "dashboard": root.innerHTML = renderDashboard(); break;
+      case "form": root.innerHTML = renderForm(); break;
+      case "detail": root.innerHTML = renderDetail(); break;
+      case "reports": root.innerHTML = renderReports(); break;
+      case "settings": root.innerHTML = renderSettings(); break;
+      default: root.innerHTML = renderAuth("login");
+    }
+    bind();
+  }
+
+  function readForm() {
+    const f = state.form;
+    const issue = val("f_issueDate") || f.issueDate;
+    let expiry = val("f_expiryDate") || f.expiryDate;
+    if (issue && (!val("f_expiryDate") || val("f_expiryDate") === f.expiryDate) && issue !== f.issueDate) {
+      expiry = addYears(issue, 1);
+    }
+    return {
+      ...f,
+      title: val("f_title") || "MR",
+      customerName: val("f_customerName"),
+      customerEmail: val("f_customerEmail"),
+      customerMobile: val("f_customerMobile"),
+      customerNic: val("f_customerNic"),
+      addressLine1: val("f_addressLine1"),
+      addressLine2: val("f_addressLine2"),
+      addressLine3: val("f_addressLine3"),
+      vehicleType: val("f_vehicleType") || "MOTOR_BIKE",
+      vehicleNumber: val("f_vehicleNumber"),
+      beneficiaryName: val("f_beneficiaryName"),
+      beneficiaryNic: val("f_beneficiaryNic"),
+      beneficiaryRelationship: val("f_beneficiaryRelationship") || "SPOUSE",
+      issueDate: issue,
+      expiryDate: expiry,
+      status: val("f_status") || f.status
+    };
+  }
+  function val(id) {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : "";
+  }
+
+  function showConfirm(message) {
+    return new Promise(resolve => {
+      const host = document.getElementById("modalHost");
+      host.innerHTML = `<div class="modal-bg"><div class="modal">
+        <p>${esc(message)}</p>
+        <div class="row-actions" style="justify-content:flex-end;margin-top:16px">
+          <button class="secondary" id="mCancel">Cancel</button>
+          <button class="danger" id="mOk">Delete</button>
+        </div>
+      </div></div>`;
+      host.querySelector("#mCancel").onclick = () => { host.innerHTML = ""; resolve(false); };
+      host.querySelector("#mOk").onclick = () => { host.innerHTML = ""; resolve(true); };
+    });
+  }
+
+  function bind() {
+    document.querySelectorAll("[data-auth]").forEach(btn => {
+      btn.onclick = () => setView(btn.getAttribute("data-auth"));
+    });
+    document.querySelectorAll("[data-nav]").forEach(btn => {
+      btn.onclick = async () => {
+        const nav = btn.getAttribute("data-nav");
+        if (nav === "dashboard") {
+          try { await loadPolicies(); setView("dashboard"); }
+          catch (e) { if (e.status === 402) setView("license"); else { state.err = e.message; setView("dashboard"); } }
+        } else if (nav === "form") startNew();
+        else if (nav === "reports") {
+          try {
+            state.reports = await api("/reports");
+            setView("reports");
+          } catch (e) {
+            if (e.status === 402) setView("license");
+            else { state.err = e.message; setView("reports"); }
+          }
+        } else if (nav === "settings") {
+          try { state.me = await api("/me"); setView("settings"); }
+          catch { setView("login"); }
+        }
+      };
+    });
+
+    const loginBtn = document.getElementById("loginBtn");
+    if (loginBtn) loginBtn.onclick = async () => {
+      try {
+        state.me = await api("/login", { method: "POST", body: { identifier: val("loginId"), password: document.getElementById("loginPass").value } });
+        if (!state.me.accessGranted) setView("license");
+        else { await loadPolicies(); setView("dashboard"); }
+      } catch (e) { state.err = e.message; render(); }
+    };
+
+    const regBtn = document.getElementById("regBtn");
+    if (regBtn) regBtn.onclick = async () => {
+      try {
+        state.me = await api("/register", {
+          method: "POST",
+          body: {
+            fullName: val("regName"),
+            email: val("regEmail"),
+            mobile: val("regMobile"),
+            password: document.getElementById("regPass").value
+          }
+        });
+        await loadPolicies();
+        setView("dashboard");
+      } catch (e) { state.err = e.message; render(); }
+    };
+
+    const forgotBtn = document.getElementById("forgotBtn");
+    if (forgotBtn) forgotBtn.onclick = async () => {
+      try {
+        const res = await api("/password-reset-requests", { method: "POST", body: { identifier: val("forgotId") } });
+        state.msg = res.message || "Request submitted";
+        state.err = "";
+        render();
+      } catch (e) { state.err = e.message; state.msg = ""; render(); }
+    };
+
+    const licBtn = document.getElementById("licBtn");
+    if (licBtn) licBtn.onclick = async () => {
+      try {
+        const key = val("licKey");
+        await api("/licenses/activate", { method: "POST", body: { agentId: state.me.agent.id, licenseKey: key } });
+        state.me = await api("/me");
+        if (state.me.accessGranted) { await loadPolicies(); setView("dashboard"); }
+        else { state.msg = state.me.licenseMessage; render(); }
+      } catch (e) { state.err = e.message; render(); }
+    };
+
+    const logoutBtn = document.getElementById("logoutBtn");
+    if (logoutBtn) logoutBtn.onclick = async () => {
+      await api("/logout", { method: "POST", body: {} });
+      state.me = null;
+      setView("login");
+    };
+
+    const searchQ = document.getElementById("searchQ");
+    if (searchQ) {
+      searchQ.oninput = () => { state.query = searchQ.value; };
+      searchQ.onkeydown = e => { if (e.key === "Enter") { state.query = searchQ.value; render(); } };
+      searchQ.onchange = () => { state.query = searchQ.value; render(); };
+    }
+    const refreshBtn = document.getElementById("refreshBtn");
+    if (refreshBtn) refreshBtn.onclick = async () => {
+      try { await loadPolicies(); state.me = await api("/me"); setView("dashboard"); }
+      catch (e) { if (e.status === 402) setView("license"); }
+    };
+    const fab = document.getElementById("fabNew");
+    if (fab) fab.onclick = startNew;
+
+    document.querySelectorAll("[data-open]").forEach(el => {
+      el.onclick = () => loadDetail(el.getAttribute("data-open"));
+    });
+
+    document.querySelectorAll("[data-upload]").forEach(input => {
+      input.onchange = async () => {
+        const key = input.getAttribute("data-upload");
+        const file = input.files && input.files[0];
+        if (!file) return;
+        const fd = new FormData();
+        fd.append("file", file);
+        try {
+          const up = await api("/upload", { method: "POST", body: fd });
+          state.form = readForm();
+          state.form[key] = up.path;
+          state.msg = labelFor(key) + " uploaded";
+          render();
+        } catch (e) { state.err = e.message; render(); }
+      };
+    });
+
+    const issueEl = document.getElementById("f_issueDate");
+    if (issueEl) {
+      issueEl.onchange = () => {
+        const exp = document.getElementById("f_expiryDate");
+        if (exp) exp.value = addYears(issueEl.value, 1);
+      };
+    }
+
+    const savePolicy = document.getElementById("savePolicy");
+    if (savePolicy) savePolicy.onclick = () => saveCurrent(false);
+    const saveDraft = document.getElementById("saveDraft");
+    if (saveDraft) saveDraft.onclick = () => saveCurrent(true);
+    const cancelForm = document.getElementById("cancelForm");
+    if (cancelForm) cancelForm.onclick = async () => { await loadPolicies(); setView("dashboard"); };
+
+    const backDash = document.getElementById("backDash");
+    if (backDash) backDash.onclick = async () => { await loadPolicies(); setView("dashboard"); };
+    const editPolicy = document.getElementById("editPolicy");
+    if (editPolicy) editPolicy.onclick = () => startEdit(state.form);
+    const renewPolicy = document.getElementById("renewPolicy");
+    if (renewPolicy) renewPolicy.onclick = async () => {
+      try {
+        state.form = await api("/policies/" + state.form.id + "/renew", { method: "POST", body: {} });
+        state.msg = "Marked renewed — new issue/expiry set for 1 year";
+        render();
+      } catch (e) { state.err = e.message; render(); }
+    };
+    const deletePolicy = document.getElementById("deletePolicy");
+    if (deletePolicy) deletePolicy.onclick = async () => {
+      if (!(await showConfirm("Delete this policy? This cannot be undone from the agent portal."))) return;
+      try {
+        await api("/policies/" + state.form.id, { method: "DELETE" });
+        await loadPolicies();
+        setView("dashboard");
+      } catch (e) { state.err = e.message; render(); }
+    };
+
+    async function logChannel(channel) {
+      try {
+        const p = state.form;
+        await api("/reminder-logs", {
+          method: "POST",
+          body: {
+            id: uuid(),
+            policyId: p.id,
+            agentId: state.me.agent.id,
+            channel,
+            message: reminderMessage(p),
+            daysBeforeExpiry: daysUntil(p.expiryDate)
+          }
+        });
+        state.reminders = await api("/policies/" + p.id + "/reminders");
+        state.msg = channel + " logged";
+        render();
+      } catch (e) { state.err = e.message; render(); }
+    }
+    const logCall = document.getElementById("logCall");
+    if (logCall) logCall.onclick = () => logChannel("CALL");
+    const logSms = document.getElementById("logSms");
+    if (logSms) logSms.onclick = () => logChannel("SMS");
+    const logWa = document.getElementById("logWa");
+    if (logWa) logWa.onclick = () => logChannel("WHATSAPP");
+
+    const setLicBtn = document.getElementById("setLicBtn");
+    if (setLicBtn) setLicBtn.onclick = async () => {
+      try {
+        await api("/licenses/activate", { method: "POST", body: { agentId: state.me.agent.id, licenseKey: val("setLicKey") } });
+        state.me = await api("/me");
+        document.getElementById("licMsg").textContent = state.me.licenseMessage || "Activated";
+        document.getElementById("licErr").textContent = "";
+      } catch (e) {
+        document.getElementById("licErr").textContent = e.message;
+      }
+    };
+    const changePassBtn = document.getElementById("changePassBtn");
+    if (changePassBtn) changePassBtn.onclick = async () => {
+      const np = document.getElementById("newPass").value;
+      const np2 = document.getElementById("newPass2").value;
+      if (np !== np2) {
+        document.getElementById("passErr").textContent = "New passwords do not match";
+        return;
+      }
+      try {
+        state.me = await api("/change-password", {
+          method: "POST",
+          body: { currentPassword: document.getElementById("curPass").value, newPassword: np }
+        });
+        document.getElementById("passOk").textContent = "Password updated";
+        document.getElementById("passErr").textContent = "";
+      } catch (e) {
+        document.getElementById("passErr").textContent = e.message;
+      }
+    };
+  }
+
+  function labelFor(key) {
+    return ({ nicFrontPath: "NIC front", nicRearPath: "NIC rear", vrcPath: "VRC" })[key] || "File";
+  }
+
+  async function saveCurrent(asDraft) {
+    try {
+      const f = readForm();
+      if (!f.customerName && !asDraft) throw new Error("Customer name is required");
+      if (!f.id) f.id = uuid();
+      const payload = {
+        ...f,
+        isDraft: asDraft,
+        status: asDraft ? "DRAFT" : (f.status === "DRAFT" ? "ACTIVE" : f.status),
+        agentId: state.me.agent.id,
+        customerNic: (f.customerNic || "").toUpperCase(),
+        vehicleNumber: (f.vehicleNumber || "").toUpperCase(),
+        beneficiaryNic: (f.beneficiaryNic || "").toUpperCase(),
+        createdAt: f.createdAt || Date.now(),
+        updatedAt: Date.now(),
+        deleted: false
+      };
+      const saved = await api("/policies", { method: "PUT", body: payload });
+      state.form = saved;
+      state.editingId = saved.id;
+      state.msg = asDraft ? "Draft saved" : "Policy saved";
+      await loadDetail(saved.id);
+    } catch (e) {
+      state.err = e.message;
+      render();
+    }
+  }
+
+  boot();
+})();
+  </script>
+</body>
+</html>

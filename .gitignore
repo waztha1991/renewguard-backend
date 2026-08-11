@@ -1,0 +1,8 @@
+node_modules/
+.wrangler/
+.gradle/
+build/
+backend/data/
+*.db
+.env
+.env.production

@@ -1,0 +1,10 @@
+# Copy to config.yml after: cloudflared tunnel create renewguard
+# Replace TUNNEL_ID and credentials path.
+
+tunnel: TUNNEL_ID
+credentials-file: C:\Users\abnalk\.cloudflared\TUNNEL_ID.json
+
+ingress:
+  - hostname: renewguard.yourdomain.com
+    service: http://127.0.0.1:8080
+  - service: http_status:404

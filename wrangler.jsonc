@@ -1,0 +1,37 @@
+{
+  "name": "renewguard-backend",
+  "main": "deploy/cloudflare/worker/src/index.ts",
+  "compatibility_date": "2026-06-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "observability": {
+    "enabled": true
+  },
+  "routes": [
+    {
+      "pattern": "api.renewguard.antsolutions.uk",
+      "custom_domain": true
+    }
+  ],
+  "containers": [
+    {
+      "class_name": "RenewGuardContainer",
+      "image": "./Dockerfile",
+      "max_instances": 2
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "RENEWGUARD",
+        "class_name": "RenewGuardContainer"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["RenewGuardContainer"]
+    }
+  ]
+}

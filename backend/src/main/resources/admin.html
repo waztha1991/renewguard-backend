@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>RenewGuard Admin</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230e7c72'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-family='Arial,sans-serif' font-size='27' font-weight='700' fill='%23ffffff'%3ERG%3C/text%3E%3C/svg%3E" />
+  <style>
+    :root {
+      --navy: #0B1F3A;
+      --teal: #0D9488;
+      --bg: #F1F5F9;
+      --card: #ffffff;
+      --muted: #64748B;
+      --danger: #DC2626;
+      --ok: #16A34A;
+      --warn: #D97706;
+      --border: #E2E8F0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: linear-gradient(160deg, #0B1F3A 0%, #134E4A 38%, #F1F5F9 38%);
+      min-height: 100vh;
+      color: #0F172A;
+    }
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 24px 16px 64px; }
+    h1 { color: #CCFBF1; margin: 0 0 4px; font-size: 2rem; letter-spacing: -0.02em; }
+    .sub { color: #99F6E4; margin-bottom: 24px; }
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 8px 30px rgba(11,31,58,0.12);
+      margin-bottom: 18px;
+    }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+    .stat {
+      background: #F8FAFC; border: 1px solid var(--border); border-radius: 12px; padding: 12px;
+      text-align: left; width: 100%; font: inherit; cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+    }
+    .stat:hover, .stat:focus-visible {
+      border-color: var(--teal); box-shadow: 0 4px 14px rgba(13,148,136,0.18);
+      transform: translateY(-1px); outline: none;
+    }
+    .stat:active { transform: translateY(0); }
+    .stat b { display: block; font-size: 1.45rem; color: var(--navy); }
+    .stat span { color: var(--muted); font-size: 0.8rem; display: block; margin-top: 2px; }
+    .stat .stat-hint { font-size: 0.68rem; color: var(--teal); margin-top: 6px; font-weight: 600; }
+    label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 4px; }
+    input, button, select {
+      font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border);
+    }
+    input, select { width: 100%; margin-bottom: 10px; }
+    button {
+      background: var(--navy); color: #CCFBF1; border: none; cursor: pointer; font-weight: 600;
+    }
+    button.secondary { background: #E2E8F0; color: var(--navy); }
+    button.danger { background: var(--danger); color: white; }
+    button.ok { background: var(--ok); color: white; }
+    button.teal { background: var(--teal); color: white; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; }
+    .row-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700;
+    }
+    .badge.on, .badge.ACTIVE, .badge.LICENSED { background: #DCFCE7; color: #166534; }
+    .badge.off, .badge.REVOKED { background: #FEE2E2; color: #991B1B; }
+    .badge.UNUSED, .badge.TRIAL { background: #E0F2FE; color: #075985; }
+    .badge.EXPIRED { background: #FFEDD5; color: #9A3412; }
+    .hidden { display: none !important; }
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 12px; }
+    .toolbar > div { flex: 1; min-width: 140px; display: flex; flex-direction: column; justify-content: flex-end; }
+    .toolbar > div.narrow { flex: 0 0 150px; min-width: 120px; }
+    .toolbar label { margin-bottom: 4px; line-height: 1.2; }
+    .toolbar input,
+    .toolbar select,
+    .toolbar > button {
+      margin-bottom: 0;
+      height: 44px;
+      line-height: normal;
+    }
+    .toolbar > button { flex: 0 0 auto; padding-left: 18px; padding-right: 18px; white-space: nowrap; }
+    .err { color: var(--danger); margin-top: 8px; }
+    .okmsg { color: var(--ok); margin-top: 8px; font-size: 0.9rem; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+    .tabs button { background: #E2E8F0; color: var(--navy); }
+    .tabs button.active { background: var(--teal); color: white; }
+    #loginCard { max-width: 420px; margin: 80px auto; }
+    .mono { font-family: ui-monospace, Consolas, monospace; font-size: 0.85rem; letter-spacing: 0.04em; }
+    .hint { color: var(--muted); font-size: 0.85rem; margin: 0 0 12px; }
+    .flash {
+      background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46;
+      padding: 10px 12px; border-radius: 10px; margin-bottom: 12px; font-size: 0.9rem;
+    }
+    .key-list { margin: 8px 0 0; padding-left: 18px; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 16px; }
+    .form-grid label.check { display: flex; align-items: center; gap: 8px; margin: 0; color: #0F172A; font-size: 0.9rem; }
+    .form-grid label.check input { width: auto; margin: 0; }
+    .settings-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .section-title { margin: 0 0 8px; font-size: 1.05rem; color: var(--navy); }
+    .table-scroll {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: 0 -2px;
+    }
+    .table-scroll table { min-width: 640px; }
+    button, .tabs button, .stat {
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+    input, select { font-size: 16px; } /* avoid iOS zoom on focus */
+
+    .modal-bg {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(11, 31, 58, 0.55);
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+    }
+    .modal-bg.hidden { display: none !important; }
+    .modal {
+      background: #fff; border-radius: 14px; padding: 20px;
+      width: 100%; max-width: 440px; max-height: calc(100vh - 32px); overflow-y: auto;
+      box-shadow: 0 16px 48px rgba(11,31,58,0.25);
+    }
+    .modal h3 { margin: 0 0 6px; color: var(--navy); }
+    .modal .hint { margin-bottom: 14px; }
+    .modal-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .modal-actions button { flex: 1; min-width: 110px; }
+    #editAgentErr { margin-top: 8px; min-height: 1.2em; }
+
+    @media (max-width: 720px) {
+      body {
+        background: linear-gradient(160deg, #0B1F3A 0%, #134E4A 22%, #F1F5F9 22%);
+      }
+      .wrap {
+        padding: 12px 12px calc(28px + env(safe-area-inset-bottom, 0px));
+      }
+      h1 { font-size: 1.55rem; }
+      .sub { font-size: 0.9rem; margin-bottom: 14px; }
+      .card { padding: 14px; border-radius: 12px; margin-bottom: 12px; }
+      #loginCard { margin: 32px auto; max-width: 100%; }
+      .stats { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .stat { padding: 10px; }
+      .stat b { font-size: 1.25rem; }
+      .stat .stat-hint { display: none; }
+      .tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: 6px;
+        padding-bottom: 4px;
+        margin: 0 -4px 12px;
+        padding-left: 4px;
+        padding-right: 4px;
+      }
+      .tabs button {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        padding: 10px 14px;
+        font-size: 0.88rem;
+      }
+      .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .toolbar > div,
+      .toolbar > div.narrow {
+        flex: 1 1 auto;
+        min-width: 0;
+        width: 100%;
+      }
+      .toolbar > button {
+        width: 100%;
+      }
+      .row-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .row-actions button { width: 100%; }
+      .form-grid { grid-template-columns: 1fr; }
+      .settings-actions { flex-direction: column; }
+      .settings-actions button { width: 100%; }
+      th, td { padding: 10px 6px; font-size: 0.85rem; }
+      .hint { font-size: 0.8rem; }
+    }
+
+    @media (max-width: 380px) {
+      .stats { grid-template-columns: 1fr 1fr; }
+      h1 { font-size: 1.35rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>RenewGuard</h1>
+    <p class="sub">Admin — agents, policies &amp; 1-year licenses</p>
+
+    <div id="loginCard" class="card">
+      <h2 style="margin-top:0">Admin login</h2>
+      <form id="loginForm" autocomplete="off" onsubmit="return false;">
+        <label>Username</label>
+        <input id="user" name="admin-user" type="text" value="" autocomplete="off" autocapitalize="off" spellcheck="false" />
+        <label>Password</label>
+        <input id="pass" name="admin-pass" type="password" value="" autocomplete="new-password" />
+        <button id="loginBtn" type="button" style="width:100%">Sign in</button>
+      </form>
+      <div id="loginErr" class="err"></div>
+    </div>
+
+    <div id="app" class="hidden">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+          <div>
+            <strong>Signed in</strong>
+            <div style="color:var(--muted);font-size:0.9rem" id="who"></div>
+            <div style="color:var(--muted);font-size:0.8rem;margin-top:2px" id="autoRefreshHint">Auto-refresh every 15s</div>
+          </div>
+          <div class="row-actions">
+            <button class="secondary" id="refreshBtn">Refresh now</button>
+            <button class="danger" id="logoutBtn">Log out</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0">Overview</h2>
+        <p class="hint" style="margin-top:0">Click a card to open that list with the matching filter.</p>
+        <div class="stats" id="stats"></div>
+      </div>
+
+      <div class="card" id="listsCard">
+        <div class="tabs">
+          <button class="active" data-tab="agents">Agents</button>
+          <button data-tab="resets">Password resets <span id="resetBadge" class="badge UNUSED hidden" style="margin-left:4px">0</span></button>
+          <button data-tab="policies">Policies</button>
+          <button data-tab="licenses">Licenses</button>
+          <button data-tab="settings">Settings</button>
+        </div>
+
+        <div id="tab-agents">
+          <div class="toolbar">
+            <div>
+              <label>Search agents</label>
+              <input id="agentQ" placeholder="Name, email, mobile, or id" />
+            </div>
+            <div class="narrow">
+              <label>Access</label>
+              <select id="agentAccess">
+                <option value="ALL">All</option>
+                <option value="ENABLED">Active (enabled)</option>
+                <option value="TRIAL">On trial</option>
+                <option value="LICENSED">Licensed</option>
+                <option value="EXPIRED">Trial/license expired</option>
+                <option value="DISABLED">Disabled</option>
+              </select>
+            </div>
+            <button id="agentSearchBtn">Search</button>
+          </div>
+          <p class="hint">New agents get a <strong>3-month free trial</strong> from registration. Disable blocks sync. Use <strong>Set password</strong> for resets — share offline or email when SMTP is configured.</p>
+          <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Agent</th><th>UUID</th><th>Contact</th><th>Status</th><th>Access / trial</th><th>Policies</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="agentsBody"></tbody>
+          </table>
+          </div>
+        </div>
+
+        <div id="tab-resets" class="hidden">
+          <div id="resetFlash" class="flash hidden"></div>
+          <div class="toolbar">
+            <div class="narrow">
+              <label>Status</label>
+              <select id="resetStatus">
+                <option value="PENDING">Pending</option>
+                <option value="ALL">All</option>
+                <option value="COMPLETED">Completed</option>
+              </select>
+            </div>
+            <button id="resetRefreshBtn">Refresh</button>
+          </div>
+          <p class="hint">Agents request resets from the Android / Expo app or web portal (Forgot password). Only <strong>active (enabled)</strong> accounts can submit a request. Disabled accounts are rejected. Set a temporary password, then share offline or email it when SMTP is configured under Settings.</p>
+          <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Requested</th><th>Identifier</th><th>Agent</th><th>Status</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="resetsBody"></tbody>
+          </table>
+          </div>
+        </div>
+
+        <div id="tab-policies" class="hidden">
+          <div class="toolbar">
+            <div>
+              <label>Search (name, NIC, vehicle, agent id, mobile)</label>
+              <input id="q" placeholder="e.g. CAA-1234 or Nimal" />
+            </div>
+            <div class="narrow">
+              <label>Scope</label>
+              <select id="policyScope">
+                <option value="ALL">All</option>
+                <option value="EXPIRING_SOON">Expiring ≤30d</option>
+                <option value="EXPIRED">Expired</option>
+                <option value="RENEWED">Renewed</option>
+              </select>
+            </div>
+            <button id="searchBtn">Search</button>
+          </div>
+          <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Customer</th><th>Vehicle / NIC</th><th>Expiry</th><th>Status</th><th>Agent</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="policiesBody"></tbody>
+          </table>
+          </div>
+        </div>
+
+        <div id="tab-licenses" class="hidden">
+          <div id="licenseFlash" class="flash hidden"></div>
+          <div class="toolbar">
+            <div class="narrow">
+              <label>Issue count</label>
+              <input id="licenseCount" type="number" min="1" max="100" value="5" />
+            </div>
+            <div>
+              <label>Notes (optional)</label>
+              <input id="licenseNotes" placeholder="e.g. April agent batch" />
+            </div>
+            <button class="teal" id="issueLicensesBtn">Issue 1-year keys</button>
+          </div>
+          <p class="hint">
+            Keys use format <span class="mono">RG-XXXX-XXXX-XXXX</span>.
+            Each key is valid for <strong>365 days from activation</strong> in the agent app.
+          </p>
+          <div class="toolbar">
+            <div>
+              <label>Filter licenses</label>
+              <input id="licenseQ" placeholder="Key, agent name, email, notes" />
+            </div>
+            <div class="narrow">
+              <label>Status</label>
+              <select id="licenseStatus">
+                <option value="ALL">All</option>
+                <option value="UNUSED">Unused</option>
+                <option value="ACTIVE">Active</option>
+                <option value="EXPIRED">Expired</option>
+                <option value="REVOKED">Revoked</option>
+                <option value="EXPIRED_REVOKED">Expired / revoked</option>
+              </select>
+            </div>
+            <button id="licenseSearchBtn">Filter</button>
+          </div>
+          <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>License key</th><th>Status</th><th>Agent</th><th>Issued</th><th>Expires</th><th>Notes</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="licensesBody"></tbody>
+          </table>
+          </div>
+        </div>
+
+        <div id="tab-settings" class="hidden">
+          <div id="settingsFlash" class="flash hidden"></div>
+          <div id="settingsErr" class="err"></div>
+
+          <h3 class="section-title">SMTP email</h3>
+          <p class="hint">
+            Configure outbound email to send temporary passwords to agents.
+            For <strong>Cloudflare Email Sending</strong>: host <code>smtp.mx.cloudflare.net</code>,
+            port <code>465</code>, username <code>api_token</code>, password = API token with
+            <strong>Email Sending: Edit</strong>, from e.g. <code>noreply@antsolutions.uk</code>
+            (domain must be onboarded under Email Service → Email Sending).
+            The password is stored in SQLite and never returned after save — leave blank to keep it.
+            Status: <strong id="smtpStatus">Not loaded</strong>
+          </p>
+          <div class="form-grid">
+            <div>
+              <label>SMTP host</label>
+              <input id="smtpHost" placeholder="smtp.mx.cloudflare.net" autocomplete="off" />
+            </div>
+            <div>
+              <label>Port</label>
+              <input id="smtpPort" type="number" min="1" max="65535" value="465" />
+            </div>
+            <div>
+              <label>Username</label>
+              <input id="smtpUser" placeholder="api_token" autocomplete="off" />
+            </div>
+            <div>
+              <label>Password <span id="smtpPassHint" style="font-weight:400;color:var(--muted)"></span></label>
+              <input id="smtpPass" type="password" placeholder="Cloudflare API token (or leave blank to keep)" autocomplete="new-password" />
+            </div>
+            <div>
+              <label>From email</label>
+              <input id="smtpFromEmail" placeholder="noreply@antsolutions.uk" />
+            </div>
+            <div>
+              <label>From name</label>
+              <input id="smtpFromName" placeholder="RenewGuard" />
+            </div>
+            <div>
+              <label class="check"><input id="smtpTls" type="checkbox" checked /> Use TLS</label>
+              <p class="hint" style="margin-top:4px">Cloudflare requires TLS on port 465 (SSL). Port 587 uses STARTTLS with other providers.</p>
+            </div>
+          </div>
+          <div class="settings-actions">
+            <button type="button" id="presetCfSmtpBtn" class="secondary">Fill Cloudflare Email defaults</button>
+            <button id="saveSmtpBtn" class="teal">Save SMTP settings</button>
+            <button id="testSmtpBtn" class="secondary">Send test email</button>
+          </div>
+
+          <hr style="border:none;border-top:1px solid var(--border);margin:24px 0" />
+
+          <h3 class="section-title">Backup</h3>
+          <p class="hint">
+            Download a ZIP containing a consistent SQLite snapshot (<code>renewguard.db</code>) and the
+            <code>uploads/</code> folder. SMTP credentials are included inside the database file — store backups securely.
+          </p>
+          <div class="settings-actions">
+            <button id="backupBtn" class="ok">Download backup</button>
+          </div>
+
+          <h3 class="section-title" style="margin-top:24px">Restore backup</h3>
+          <p class="hint">
+            Upload a previously downloaded backup ZIP. This replaces the live database and, when the ZIP includes
+            <code>uploads/</code>, replaces the uploads folder for consistency. Before overwrite, the server keeps a
+            timestamped safety copy (<code>renewguard.db.pre-restore-…</code>, and
+            <code>uploads.pre-restore-…</code> when uploads are replaced).
+          </p>
+          <label for="restoreFile">Backup ZIP</label>
+          <input id="restoreFile" type="file" accept=".zip,application/zip" />
+          <div class="settings-actions">
+            <button id="restoreBtn" class="danger">Restore backup</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="editAgentModal" class="modal-bg hidden" role="dialog" aria-modal="true" aria-labelledby="editAgentTitle">
+    <div class="modal">
+      <h3 id="editAgentTitle">Edit agent</h3>
+      <p class="hint">Update name, email, or mobile. Changes sync for login and admin contact.</p>
+      <input type="hidden" id="editAgentId" />
+      <label>Full name</label>
+      <input id="editAgentName" autocomplete="name" />
+      <label>Email</label>
+      <input id="editAgentEmail" type="email" autocomplete="email" />
+      <label>Mobile</label>
+      <input id="editAgentMobile" type="tel" autocomplete="tel" placeholder="07XXXXXXXX or +94…" />
+      <label class="check" style="display:flex;align-items:center;gap:8px;margin:8px 0 0;color:#0F172A">
+        <input id="editAgentEnabled" type="checkbox" style="width:auto;margin:0" />
+        Account enabled
+      </label>
+      <div id="editAgentErr" class="err"></div>
+      <div class="modal-actions">
+        <button type="button" class="secondary" id="editAgentCancelBtn">Cancel</button>
+        <button type="button" class="teal" id="editAgentSaveBtn">Save changes</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
+    ...opts
+  });
+  const text = await res.text();
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch { data = { error: text }; }
+  if (!res.ok) throw new Error((data && (data.error || data.message)) || res.statusText);
+  return data;
+}
+
+const loginCard = document.getElementById('loginCard');
+const app = document.getElementById('app');
+
+async function checkSession() {
+  try {
+    const me = await api('/api/admin/me');
+    showApp(me.user);
+    await loadAll();
+    startAutoRefresh();
+  } catch {
+    stopAutoRefresh();
+    loginCard.classList.remove('hidden');
+    app.classList.add('hidden');
+  }
+}
+
+function showApp(user) {
+  loginCard.classList.add('hidden');
+  app.classList.remove('hidden');
+  document.getElementById('who').textContent = user;
+}
+
+document.getElementById('loginForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  document.getElementById('loginBtn').click();
+});
+document.getElementById('loginBtn').onclick = async () => {
+  const err = document.getElementById('loginErr');
+  err.textContent = '';
+  try {
+    await api('/api/admin/login', {
+      method: 'POST',
+      body: JSON.stringify({
+        username: document.getElementById('user').value.trim(),
+        password: document.getElementById('pass').value
+      })
+    });
+    showApp(document.getElementById('user').value.trim());
+    await loadAll();
+    startAutoRefresh();
+  } catch (e) {
+    err.textContent = e.message;
+  }
+};
+
+document.getElementById('logoutBtn').onclick = async () => {
+  stopAutoRefresh();
+  await api('/api/admin/logout', { method: 'POST', body: '{}' });
+  location.reload();
+};
+
+document.getElementById('refreshBtn').onclick = async () => {
+  const btn = document.getElementById('refreshBtn');
+  if (refreshInFlight) return;
+  refreshInFlight = true;
+  btn.disabled = true;
+  btn.textContent = 'Refreshing…';
+  try {
+    await loadAll();
+    markRefreshed();
+  } catch (e) {
+    alert(e.message || 'Could not refresh admin data');
+  } finally {
+    refreshInFlight = false;
+    btn.disabled = false;
+    btn.textContent = 'Refresh now';
+  }
+};
+
+const AUTO_REFRESH_MS = 15000;
+let autoRefreshTimer = null;
+let refreshInFlight = false;
+
+function startAutoRefresh() {
+  stopAutoRefresh();
+  autoRefreshTimer = setInterval(() => {
+    if (document.hidden) return;
+    if (app.classList.contains('hidden')) return;
+    silentRefresh();
+  }, AUTO_REFRESH_MS);
+  markRefreshed();
+}
+
+function stopAutoRefresh() {
+  if (autoRefreshTimer) {
+    clearInterval(autoRefreshTimer);
+    autoRefreshTimer = null;
+  }
+}
+
+function markRefreshed() {
+  const el = document.getElementById('autoRefreshHint');
+  if (!el) return;
+  const t = new Date();
+  const stamp = t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  el.textContent = 'Auto-refresh every 15s · Last updated ' + stamp;
+}
+
+async function silentRefresh() {
+  if (refreshInFlight) return;
+  // Don't overwrite SMTP fields while the admin is editing Settings.
+  const active = document.activeElement;
+  if (active && active.closest && active.closest('#tab-settings')) return;
+  refreshInFlight = true;
+  try {
+    await Promise.all([loadStats(), loadAgents(), loadResets(), loadPolicies(), loadLicenses()]);
+    markRefreshed();
+  } catch {
+    // Session may have expired; next manual action will redirect to login.
+  } finally {
+    refreshInFlight = false;
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && !app.classList.contains('hidden')) {
+    silentRefresh();
+  }
+});
+
+function showTab(tab) {
+  document.querySelectorAll('.tabs button').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  document.getElementById('tab-agents').classList.toggle('hidden', tab !== 'agents');
+  document.getElementById('tab-resets').classList.toggle('hidden', tab !== 'resets');
+  document.getElementById('tab-policies').classList.toggle('hidden', tab !== 'policies');
+  document.getElementById('tab-licenses').classList.toggle('hidden', tab !== 'licenses');
+  document.getElementById('tab-settings').classList.toggle('hidden', tab !== 'settings');
+  if (tab === 'settings') loadSettings();
+  const lists = document.getElementById('listsCard');
+  if (lists) lists.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+document.querySelectorAll('.tabs button').forEach(btn => {
+  btn.onclick = () => showTab(btn.dataset.tab);
+});
+
+document.getElementById('searchBtn').onclick = () => loadPolicies();
+document.getElementById('q').addEventListener('keydown', e => {
+  if (e.key === 'Enter') loadPolicies();
+});
+document.getElementById('policyScope').onchange = () => loadPolicies();
+document.getElementById('agentSearchBtn').onclick = () => loadAgents();
+document.getElementById('agentQ').addEventListener('keydown', e => {
+  if (e.key === 'Enter') loadAgents();
+});
+document.getElementById('agentAccess').onchange = () => loadAgents();
+document.getElementById('resetRefreshBtn').onclick = () => loadResets();
+document.getElementById('resetStatus').onchange = () => loadResets();
+document.getElementById('licenseSearchBtn').onclick = () => loadLicenses();
+document.getElementById('licenseQ').addEventListener('keydown', e => {
+  if (e.key === 'Enter') loadLicenses();
+});
+document.getElementById('licenseStatus').onchange = () => loadLicenses();
+
+document.getElementById('issueLicensesBtn').onclick = async () => {
+  const count = parseInt(document.getElementById('licenseCount').value, 10) || 1;
+  const notes = document.getElementById('licenseNotes').value.trim();
+  try {
+    const res = await api('/api/admin/licenses', {
+      method: 'POST',
+      body: JSON.stringify({ count, notes: notes || null })
+    });
+    const flash = document.getElementById('licenseFlash');
+    flash.classList.remove('hidden');
+    flash.innerHTML = esc(res.message) +
+      '<ul class="key-list">' +
+      res.created.map(l => '<li class="mono">' + esc(l.licenseKey) + '</li>').join('') +
+      '</ul>';
+    await loadAll();
+  } catch (e) {
+    alert(e.message);
+  }
+};
+
+async function loadAll() {
+  await Promise.all([loadStats(), loadAgents(), loadResets(), loadPolicies(), loadLicenses(), loadSettings()]);
+}
+
+async function loadSettings() {
+  const err = document.getElementById('settingsErr');
+  if (err) err.textContent = '';
+  try {
+    const s = await api('/api/admin/settings');
+    document.getElementById('smtpHost').value = s.host || '';
+    document.getElementById('smtpPort').value = s.port || 587;
+    document.getElementById('smtpUser').value = s.username || '';
+    document.getElementById('smtpPass').value = '';
+    document.getElementById('smtpFromEmail').value = s.fromEmail || '';
+    document.getElementById('smtpFromName').value = s.fromName || 'RenewGuard';
+    document.getElementById('smtpTls').checked = !!s.useTls;
+    document.getElementById('smtpPassHint').textContent = s.passwordConfigured
+      ? '(configured — leave blank to keep)'
+      : '(not set)';
+    document.getElementById('smtpStatus').textContent = s.configured
+      ? 'Ready'
+      : 'Incomplete — fill host, from email, and password if username is set';
+    document.getElementById('smtpStatus').style.color = s.configured ? 'var(--ok)' : 'var(--warn)';
+  } catch (e) {
+    if (err) err.textContent = e.message;
+  }
+}
+
+document.getElementById('presetCfSmtpBtn').onclick = () => {
+  document.getElementById('smtpHost').value = 'smtp.mx.cloudflare.net';
+  document.getElementById('smtpPort').value = '465';
+  document.getElementById('smtpUser').value = 'api_token';
+  document.getElementById('smtpFromEmail').value = document.getElementById('smtpFromEmail').value.trim()
+    || 'noreply@antsolutions.uk';
+  document.getElementById('smtpFromName').value = document.getElementById('smtpFromName').value.trim()
+    || 'RenewGuard';
+  document.getElementById('smtpTls').checked = true;
+  document.getElementById('smtpPass').focus();
+  const flash = document.getElementById('settingsFlash');
+  flash.classList.remove('hidden');
+  flash.textContent = 'Cloudflare defaults filled. Paste your Email Sending API token into Password, then Save.';
+};
+
+document.getElementById('saveSmtpBtn').onclick = async () => {
+  const err = document.getElementById('settingsErr');
+  const flash = document.getElementById('settingsFlash');
+  err.textContent = '';
+  flash.classList.add('hidden');
+  const password = document.getElementById('smtpPass').value;
+  try {
+    const saved = await api('/api/admin/settings', {
+      method: 'PUT',
+      body: JSON.stringify({
+        host: document.getElementById('smtpHost').value.trim(),
+        port: parseInt(document.getElementById('smtpPort').value, 10) || 587,
+        username: document.getElementById('smtpUser').value.trim(),
+        password: password.length ? password : null,
+        fromEmail: document.getElementById('smtpFromEmail').value.trim(),
+        fromName: document.getElementById('smtpFromName').value.trim() || 'RenewGuard',
+        useTls: document.getElementById('smtpTls').checked
+      })
+    });
+    flash.classList.remove('hidden');
+    flash.textContent = saved.configured
+      ? 'SMTP settings saved. Mailer is ready.'
+      : 'SMTP settings saved, but configuration is incomplete (host + from email required; password required when username is set).';
+    document.getElementById('smtpPass').value = '';
+    await loadSettings();
+  } catch (e) {
+    err.textContent = e.message;
+  }
+};
+
+document.getElementById('testSmtpBtn').onclick = async () => {
+  const to = prompt('Send test email to:', document.getElementById('smtpFromEmail').value.trim());
+  if (to === null) return;
+  if (!to.trim()) {
+    alert('Enter a recipient email.');
+    return;
+  }
+  try {
+    const res = await api('/api/admin/settings/test-email', {
+      method: 'POST',
+      body: JSON.stringify({ to: to.trim() })
+    });
+    const flash = document.getElementById('settingsFlash');
+    flash.classList.remove('hidden');
+    flash.textContent = res.message || 'Test email sent.';
+  } catch (e) {
+    alert(e.message);
+  }
+};
+
+document.getElementById('backupBtn').onclick = async () => {
+  try {
+    const res = await fetch('/api/admin/backup', { credentials: 'include' });
+    if (!res.ok) {
+      let msg = res.statusText;
+      try {
+        const data = await res.json();
+        msg = data.error || data.message || msg;
+      } catch {}
+      throw new Error(msg);
+    }
+    const blob = await res.blob();
+    const cd = res.headers.get('Content-Disposition') || '';
+    const match = /filename="?([^"]+)"?/.exec(cd);
+    const name = match ? match[1] : ('renewguard-backup-' + Date.now() + '.zip');
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    const flash = document.getElementById('settingsFlash');
+    flash.classList.remove('hidden');
+    flash.textContent = 'Backup downloaded: ' + name;
+  } catch (e) {
+    alert(e.message);
+  }
+};
+
+document.getElementById('restoreBtn').onclick = async () => {
+  const input = document.getElementById('restoreFile');
+  const file = input.files && input.files[0];
+  if (!file) {
+    alert('Choose a backup ZIP file first.');
+    return;
+  }
+  if (!confirm('This will replace current data. Continue?')) return;
+  const btn = document.getElementById('restoreBtn');
+  btn.disabled = true;
+  try {
+    const fd = new FormData();
+    fd.append('file', file, file.name);
+    const res = await fetch('/api/admin/backup/restore', {
+      method: 'POST',
+      credentials: 'include',
+      body: fd
+    });
+    const text = await res.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch { data = { error: text }; }
+    if (!res.ok) {
+      throw new Error((data && (data.error || data.message)) || res.statusText);
+    }
+    const flash = document.getElementById('settingsFlash');
+    flash.classList.remove('hidden');
+    flash.textContent = (data && data.message) || 'Restore complete.';
+    input.value = '';
+    await loadSettings();
+    await loadStats();
+  } catch (e) {
+    alert(e.message);
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+async function loadStats() {
+  const s = await api('/api/admin/stats');
+  const cards = [
+    { key: 'totalAgents', label: 'Total agents', value: s.totalAgents, hint: 'Open agents' },
+    { key: 'activeAgents', label: 'Active agents', value: s.activeAgents, hint: 'Enabled agents' },
+    { key: 'onTrial', label: 'On trial', value: s.onTrialAgents || 0, hint: 'Trial agents' },
+    { key: 'policies', label: 'Policies', value: s.totalPolicies, hint: 'All policies' },
+    { key: 'expiringSoon', label: 'Expiring ≤30d', value: s.expiringSoon, hint: 'Expiring list' },
+    { key: 'expiredPolicies', label: 'Expired policies', value: s.expired || 0, hint: 'Expired list' },
+    { key: 'renewed', label: 'Renewed', value: s.renewed || 0, hint: 'Renewed list' },
+    { key: 'licenses', label: 'Licenses', value: s.totalLicenses, hint: 'All licenses' },
+    { key: 'unusedKeys', label: 'Unused keys', value: s.unusedLicenses, hint: 'Unused keys' },
+    { key: 'activeLicenses', label: 'Active licenses', value: s.activeLicenses, hint: 'Active keys' },
+    {
+      key: 'expiredRevoked',
+      label: 'Expired / revoked',
+      value: (s.expiredLicenses || 0) + (s.revokedLicenses || 0),
+      hint: 'Expired & revoked'
+    }
+  ];
+  document.getElementById('stats').innerHTML = cards.map(c =>
+    '<button type="button" class="stat" data-stat="' + c.key + '" title="Open related list">' +
+      '<b>' + c.value + '</b>' +
+      '<span>' + esc(c.label) + '</span>' +
+      '<span class="stat-hint">' + esc(c.hint) + ' →</span>' +
+    '</button>'
+  ).join('');
+  document.querySelectorAll('#stats .stat').forEach(btn => {
+    btn.onclick = () => openStat(btn.dataset.stat);
+  });
+}
+
+async function openStat(key) {
+  switch (key) {
+    case 'totalAgents':
+      document.getElementById('agentQ').value = '';
+      document.getElementById('agentAccess').value = 'ALL';
+      showTab('agents');
+      await loadAgents();
+      break;
+    case 'activeAgents':
+      document.getElementById('agentQ').value = '';
+      document.getElementById('agentAccess').value = 'ENABLED';
+      showTab('agents');
+      await loadAgents();
+      break;
+    case 'onTrial':
+      document.getElementById('agentQ').value = '';
+      document.getElementById('agentAccess').value = 'TRIAL';
+      showTab('agents');
+      await loadAgents();
+      break;
+    case 'policies':
+      document.getElementById('q').value = '';
+      document.getElementById('policyScope').value = 'ALL';
+      showTab('policies');
+      await loadPolicies();
+      break;
+    case 'expiringSoon':
+      document.getElementById('q').value = '';
+      document.getElementById('policyScope').value = 'EXPIRING_SOON';
+      showTab('policies');
+      await loadPolicies();
+      break;
+    case 'expiredPolicies':
+      document.getElementById('q').value = '';
+      document.getElementById('policyScope').value = 'EXPIRED';
+      showTab('policies');
+      await loadPolicies();
+      break;
+    case 'renewed':
+      document.getElementById('q').value = '';
+      document.getElementById('policyScope').value = 'RENEWED';
+      showTab('policies');
+      await loadPolicies();
+      break;
+    case 'licenses':
+      document.getElementById('licenseQ').value = '';
+      document.getElementById('licenseStatus').value = 'ALL';
+      showTab('licenses');
+      await loadLicenses();
+      break;
+    case 'unusedKeys':
+      document.getElementById('licenseQ').value = '';
+      document.getElementById('licenseStatus').value = 'UNUSED';
+      showTab('licenses');
+      await loadLicenses();
+      break;
+    case 'activeLicenses':
+      document.getElementById('licenseQ').value = '';
+      document.getElementById('licenseStatus').value = 'ACTIVE';
+      showTab('licenses');
+      await loadLicenses();
+      break;
+    case 'expiredRevoked':
+      document.getElementById('licenseQ').value = '';
+      document.getElementById('licenseStatus').value = 'EXPIRED_REVOKED';
+      showTab('licenses');
+      await loadLicenses();
+      break;
+    default:
+      break;
+  }
+}
+
+function formatTrialCell(a) {
+  const status = a.accessStatus || (a.licensed ? 'LICENSED' : (a.onTrial ? 'TRIAL' : 'EXPIRED'));
+  let detail = '';
+  if (status === 'TRIAL' && a.trialExpiresAt) {
+    detail = '<div style="color:#64748B;font-size:0.8rem">' +
+      (a.trialDaysLeft != null ? (a.trialDaysLeft + 'd left · ') : '') +
+      'ends ' + new Date(a.trialExpiresAt).toLocaleDateString() + '</div>';
+  } else if (status === 'LICENSED') {
+    detail = '<div style="color:#64748B;font-size:0.8rem">1-year key active</div>';
+  } else if (a.trialExpiresAt) {
+    detail = '<div style="color:#64748B;font-size:0.8rem">trial ended ' +
+      new Date(a.trialExpiresAt).toLocaleDateString() + '</div>';
+  }
+  return '<span class="badge ' + esc(status) + '">' + esc(status) + '</span>' + detail;
+}
+
+async function loadAgents() {
+  const q = document.getElementById('agentQ').value.trim();
+  const access = document.getElementById('agentAccess').value;
+  const params = new URLSearchParams();
+  if (q) params.set('q', q);
+  if (access && access !== 'ALL') params.set('access', access);
+  const qs = params.toString();
+  const response = await api('/api/admin/agents' + (qs ? ('?' + qs) : ''));
+  const agents = Array.isArray(response) ? response : [];
+  const body = document.getElementById('agentsBody');
+  body.innerHTML = agents.map((a, index) =>
+    '<tr>' +
+      '<td><strong>' + esc(a.fullName) + '</strong>' +
+        (a.pendingResetRequest ? ' <span class="badge UNUSED">Reset pending</span>' : '') + '</td>' +
+      '<td class="mono" style="font-size:0.78rem;word-break:break-all">' + esc(a.id || '—') + '</td>' +
+      '<td>' + esc(a.email) + '<br/>' + esc(a.mobile) + '</td>' +
+      '<td><span class="badge ' + (a.enabled ? 'on' : 'off') + '">' + (a.enabled ? 'Enabled' : 'Disabled') + '</span></td>' +
+      '<td>' + formatTrialCell(a) + '</td>' +
+      '<td>' + a.policyCount + '</td>' +
+      '<td class="row-actions">' +
+        '<button class="secondary edit-agent-btn" data-agent-index="' + index + '">Edit</button>' +
+        '<button class="teal" onclick="setAgentPassword(\'' + a.id + '\', \'' + escAttr(a.fullName) + '\')">Set password</button>' +
+        '<button class="secondary" onclick="toggleAgent(\'' + a.id + '\', ' + (!a.enabled) + ')">' + (a.enabled ? 'Disable' : 'Enable') + '</button>' +
+        '<button class="danger" onclick="deleteAgent(\'' + a.id + '\', \'' + escAttr(a.fullName) + '\')">Delete</button>' +
+      '</td>' +
+    '</tr>'
+  ).join('') || '<tr><td colspan="7">No agents found. Register from the Android app with the backend running.</td></tr>';
+  body.querySelectorAll('.edit-agent-btn').forEach(button => {
+    button.addEventListener('click', () => {
+      const agent = agents[Number(button.dataset.agentIndex)];
+      if (!agent) return;
+      openEditAgent(agent.id, agent.fullName, agent.email, agent.mobile, agent.enabled);
+    });
+  });
+}
+
+async function loadResets() {
+  const status = document.getElementById('resetStatus').value || 'PENDING';
+  const rows = await api('/api/admin/password-reset-requests?status=' + encodeURIComponent(status));
+  const pending = status === 'PENDING'
+    ? rows
+    : (await api('/api/admin/password-reset-requests?status=PENDING'));
+  const badge = document.getElementById('resetBadge');
+  const pendingCount = pending.length;
+  if (pendingCount > 0) {
+    badge.textContent = String(pendingCount);
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+  const body = document.getElementById('resetsBody');
+  body.innerHTML = rows.map(r => {
+    const agentLabel = r.agentName
+      ? (esc(r.agentName) + '<br/><span style="color:#64748B;font-size:0.8rem">' + esc(r.agentEmail || '') + ' · ' + esc(r.agentMobile || '') + '</span>')
+      : '<span style="color:#64748B">No matching agent</span>';
+    const canSet = r.agentId && r.status === 'PENDING';
+    return '<tr>' +
+      '<td>' + fmtDate(r.createdAt) + '</td>' +
+      '<td class="mono">' + esc(r.identifier) + '</td>' +
+      '<td>' + agentLabel + '</td>' +
+      '<td><span class="badge ' + (r.status === 'PENDING' ? 'UNUSED' : 'on') + '">' + esc(r.status) + '</span></td>' +
+      '<td class="row-actions">' +
+        (canSet
+          ? '<button class="teal" onclick="setAgentPassword(\'' + r.agentId + '\', \'' + escAttr(r.agentName || r.identifier) + '\', \'' + r.id + '\')">Set temp password</button>'
+          : '') +
+        '<button class="danger" onclick="deleteResetRequest(\'' + r.id + '\', \'' + escAttr(r.identifier) + '\')">Delete</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('') || '<tr><td colspan="5">No password reset requests.</td></tr>';
+}
+
+async function deleteResetRequest(id, identifier) {
+  if (!confirm('Delete password reset request for "' + identifier + '"?')) return;
+  try {
+    await api('/api/admin/password-reset-requests/' + encodeURIComponent(id), { method: 'DELETE' });
+    const flash = document.getElementById('resetFlash');
+    flash.classList.remove('hidden');
+    flash.textContent = 'Password reset request deleted.';
+    await loadResets();
+    await loadStats();
+  } catch (e) {
+    alert(e.message || 'Delete failed');
+  }
+}
+
+async function setAgentPassword(agentId, name, resetRequestId) {
+  const choice = prompt(
+    'Set password for "' + name + '".\n\n' +
+    'Leave blank to auto-generate a temporary password,\n' +
+    'or type a new password (min 6 characters):',
+    ''
+  );
+  if (choice === null) return;
+  const trimmed = choice.trim();
+  const emailToAgent = confirm(
+    'Also email the temporary password to the agent\'s registered email?\n\n' +
+    'OK = email (requires SMTP in Settings)\n' +
+    'Cancel = show once only (share offline)'
+  );
+  try {
+    const res = await api('/api/admin/agents/' + agentId + '/password', {
+      method: 'POST',
+      body: JSON.stringify({
+        password: trimmed,
+        generateTemp: trimmed.length === 0,
+        resetRequestId: resetRequestId || null,
+        emailToAgent: !!emailToAgent
+      })
+    });
+    const flash = document.getElementById('resetFlash');
+    flash.classList.remove('hidden');
+    flash.innerHTML = esc(res.message) +
+      (res.temporaryPassword
+        ? '<div style="margin-top:8px">Temporary password (show once): <span class="mono"><strong>' +
+          esc(res.temporaryPassword) + '</strong></span></div>'
+        : '') +
+      (res.emailSent
+        ? '<div style="margin-top:6px;color:#166534">Email sent to agent.</div>'
+        : (res.emailError
+          ? '<div style="margin-top:6px;color:#991B1B">Email not sent: ' + esc(res.emailError) + '</div>'
+          : ''));
+    alert(
+      'Password set for ' + name + '.\n\nTemporary password:\n' +
+      (res.temporaryPassword || '(see admin panel)') +
+      '\n\n' +
+      (res.emailSent
+        ? 'Also emailed to the agent.'
+        : (res.emailError
+          ? 'Email failed: ' + res.emailError + '\nShare offline (call / WhatsApp).'
+          : 'Share this offline (call / WhatsApp).')) +
+      '\nAgent should change it in Settings after signing in.'
+    );
+    await loadAll();
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+async function loadPolicies() {
+  const q = document.getElementById('q').value.trim();
+  const scope = (document.getElementById('policyScope') || {}).value || 'ALL';
+  let policies = await api('/api/admin/policies' + (q ? ('?q=' + encodeURIComponent(q)) : ''));
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const in30 = new Date(today);
+  in30.setDate(in30.getDate() + 30);
+  const day = (iso) => {
+    if (!iso) return null;
+    const d = new Date(iso + 'T00:00:00');
+    return Number.isNaN(d.getTime()) ? null : d;
+  };
+  if (scope === 'EXPIRING_SOON') {
+    policies = policies.filter(p => {
+      if (p.isDraft || p.status === 'RENEWED') return false;
+      const e = day(p.expiryDate);
+      return e && e >= today && e <= in30;
+    });
+  } else if (scope === 'EXPIRED') {
+    policies = policies.filter(p => {
+      if (p.isDraft) return false;
+      const e = day(p.expiryDate);
+      return e && e < today;
+    });
+  } else if (scope === 'RENEWED') {
+    policies = policies.filter(p => p.status === 'RENEWED' || !!p.renewedAt);
+  }
+  const body = document.getElementById('policiesBody');
+  body.innerHTML = policies.map(p =>
+    '<tr>' +
+      '<td><strong>' + esc(p.customerName || '—') + '</strong><br/><span style="color:#64748B">' + esc(p.customerMobile || '') + '</span></td>' +
+      '<td>' + esc(p.vehicleNumber || '—') + '<br/>' + esc(p.customerNic || '') + '</td>' +
+      '<td>' + esc(p.expiryDate || '—') + '</td>' +
+      '<td>' + esc(p.status) + '</td>' +
+      '<td class="mono" style="font-size:0.78rem;word-break:break-all">' + esc(p.agentId || '—') + '</td>' +
+      '<td><button class="danger" onclick="deletePolicy(\'' + p.id + '\')">Delete</button></td>' +
+    '</tr>'
+  ).join('') || '<tr><td colspan="6">No policies found.</td></tr>';
+}
+
+async function loadLicenses() {
+  const q = document.getElementById('licenseQ').value.trim();
+  const status = document.getElementById('licenseStatus').value;
+  const params = new URLSearchParams();
+  if (q) params.set('q', q);
+  if (status && status !== 'ALL' && status !== 'EXPIRED_REVOKED') params.set('status', status);
+  const qs = params.toString();
+  let licenses = await api('/api/admin/licenses' + (qs ? ('?' + qs) : ''));
+  if (status === 'EXPIRED_REVOKED') {
+    licenses = licenses.filter(l => l.status === 'EXPIRED' || l.status === 'REVOKED');
+  }
+  const body = document.getElementById('licensesBody');
+  body.innerHTML = licenses.map(l => {
+    const canRevoke = l.status === 'UNUSED' || l.status === 'ACTIVE';
+    const canExtend = l.status === 'ACTIVE' || l.status === 'EXPIRED';
+    const canAssign = l.status === 'UNUSED';
+    return '<tr>' +
+      '<td class="mono">' + esc(l.licenseKey) + '</td>' +
+      '<td><span class="badge ' + esc(l.status) + '">' + esc(l.status) + '</span></td>' +
+      '<td>' + (l.agentName ? (esc(l.agentName) + '<br/><span style="color:#64748B;font-size:0.8rem">' + esc(l.agentEmail || '') + '</span>') : '—') + '</td>' +
+      '<td>' + fmtDate(l.issuedAt) + '</td>' +
+      '<td>' + (l.expiresAt ? fmtDate(l.expiresAt) : 'On activation') + '</td>' +
+      '<td>' + esc(l.notes || '—') + '</td>' +
+      '<td class="row-actions">' +
+        (canAssign ? '<button class="secondary" onclick="assignLicense(\'' + l.id + '\')">Assign</button>' : '') +
+        (canExtend ? '<button class="ok" onclick="extendLicense(\'' + l.id + '\')">+1 year</button>' : '') +
+        (canRevoke ? '<button class="danger" onclick="revokeLicense(\'' + l.id + '\')">Revoke</button>' : '') +
+      '</td>' +
+    '</tr>';
+  }).join('') || '<tr><td colspan="7">No licenses yet. Issue keys above.</td></tr>';
+}
+
+async function toggleAgent(id, enabled) {
+  await api('/api/admin/agents/' + id, {
+    method: 'PATCH',
+    body: JSON.stringify({ enabled })
+  });
+  await loadAll();
+}
+
+function openEditAgent(id, fullName, email, mobile, enabled) {
+  document.getElementById('editAgentId').value = id;
+  document.getElementById('editAgentName').value = fullName || '';
+  document.getElementById('editAgentEmail').value = email || '';
+  document.getElementById('editAgentMobile').value = mobile || '';
+  document.getElementById('editAgentEnabled').checked = !!enabled;
+  document.getElementById('editAgentErr').textContent = '';
+  document.getElementById('editAgentModal').classList.remove('hidden');
+  document.getElementById('editAgentName').focus();
+}
+
+function closeEditAgent() {
+  document.getElementById('editAgentModal').classList.add('hidden');
+}
+
+document.getElementById('editAgentCancelBtn').onclick = closeEditAgent;
+document.getElementById('editAgentModal').addEventListener('click', (e) => {
+  if (e.target.id === 'editAgentModal') closeEditAgent();
+});
+
+document.getElementById('editAgentSaveBtn').onclick = async () => {
+  const id = document.getElementById('editAgentId').value;
+  const fullName = document.getElementById('editAgentName').value.trim();
+  const email = document.getElementById('editAgentEmail').value.trim();
+  const mobile = document.getElementById('editAgentMobile').value.trim();
+  const enabled = document.getElementById('editAgentEnabled').checked;
+  const err = document.getElementById('editAgentErr');
+  err.textContent = '';
+  if (!fullName) { err.textContent = 'Full name is required'; return; }
+  if (!email.includes('@')) { err.textContent = 'Valid email is required'; return; }
+  if (!mobile) { err.textContent = 'Mobile is required'; return; }
+  const btn = document.getElementById('editAgentSaveBtn');
+  btn.disabled = true;
+  try {
+    await api('/api/admin/agents/' + encodeURIComponent(id), {
+      method: 'PATCH',
+      body: JSON.stringify({ fullName, email, mobile, enabled })
+    });
+    closeEditAgent();
+    await loadAll();
+  } catch (e) {
+    err.textContent = e.message || 'Could not save';
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+async function deleteAgent(id, name) {
+  if (!confirm('Delete agent "' + name + '", their cloud policies, and revoke their licenses?')) return;
+  await api('/api/admin/agents/' + id, { method: 'DELETE' });
+  await loadAll();
+}
+
+async function deletePolicy(id) {
+  if (!confirm('Delete this policy from cloud? Agents will remove it on next sync.')) return;
+  await api('/api/admin/policies/' + id, { method: 'DELETE' });
+  await loadAll();
+}
+
+async function revokeLicense(id) {
+  if (!confirm('Revoke this license? The agent app will lock on next online check.')) return;
+  await api('/api/admin/licenses/' + id + '/revoke', { method: 'POST', body: '{}' });
+  await loadLicenses();
+  await loadStats();
+}
+
+async function extendLicense(id) {
+  if (!confirm('Extend this license by 1 year from its current expiry (or from today if already expired)?')) return;
+  await api('/api/admin/licenses/' + id + '/extend', { method: 'POST', body: '{}' });
+  await loadLicenses();
+  await loadStats();
+}
+
+async function assignLicense(id) {
+  const agentId = prompt('Enter agent UUID to activate this key for:');
+  if (!agentId || !agentId.trim()) return;
+  try {
+    const res = await api('/api/admin/licenses/' + id + '/assign', {
+      method: 'POST',
+      body: JSON.stringify({ agentId: agentId.trim() })
+    });
+    alert(res.message || 'Assigned');
+    await loadAll();
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+function fmtDate(ms) {
+  if (!ms) return '—';
+  try {
+    return new Date(ms).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  } catch { return String(ms); }
+}
+
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+function escAttr(s) {
+  return esc(s).replace(/'/g, '');
+}
+
+checkSession();
+</script>
+</body>
+</html>
