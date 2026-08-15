@@ -94,7 +94,21 @@ fun Application.module() {
         })
     }
     install(CORS) {
-        anyHost()
+        // anyHost() + allowCredentials is invalid per the CORS spec (wildcard origin can't
+        // carry credentials) — browsers silently drop the response for any cookie-based
+        // request. List every real frontend origin explicitly instead.
+        allowHost("dev.renewguard.antsolutions.uk", schemes = listOf("https"))
+        allowHost("app-dev.renewguard.antsolutions.uk", schemes = listOf("https"))
+        allowHost("api-dev.renewguard.antsolutions.uk", schemes = listOf("https"))
+        allowHost("renewguard.antsolutions.uk", schemes = listOf("https"))
+        allowHost("app.renewguard.antsolutions.uk", schemes = listOf("https"))
+        allowHost("api.renewguard.antsolutions.uk", schemes = listOf("https"))
+        allowHost("localhost:5173", schemes = listOf("http"))
+        allowHost("localhost:8080", schemes = listOf("http"))
+        // Also allow any *.workers.dev preview/deploy URL for this project.
+        allowHost("renewguard-web-dev.antahamed.workers.dev", schemes = listOf("https"))
+        allowHost("renewguard-landing-dev.antahamed.workers.dev", schemes = listOf("https"))
+        allowHost("renewguard-backend-dev.antahamed.workers.dev", schemes = listOf("https"))
         allowHeader(HttpHeaders.ContentType)
         allowHeader("X-Agent-Id")
         allowMethod(HttpMethod.Get)
