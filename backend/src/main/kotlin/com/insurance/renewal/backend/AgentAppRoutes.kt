@@ -125,6 +125,11 @@ fun Route.agentAppRoutes(
             call.respond(db.getLicenseStatusForAgent(agent.id))
         }
 
+        get("/announcements") {
+            requireAgent(call, db) ?: return@get
+            call.respond(db.listActiveAnnouncements())
+        }
+
         post("/licenses/activate") {
             val agent = requireAgent(call, db) ?: return@post
             val req = call.receive<ActivateLicenseRequest>()

@@ -284,6 +284,7 @@
           <button data-tab="policies">Policies</button>
           <button data-tab="licenses">Licenses</button>
           <button data-tab="reports">Reports</button>
+          <button data-tab="announcements">Announcements</button>
           <button data-tab="settings">Settings</button>
         </div>
 
@@ -457,6 +458,36 @@
           <table>
             <thead id="reportTableHead"></thead>
             <tbody id="reportTableBody"></tbody>
+          </table>
+          </div>
+        </div>
+
+        <div id="tab-announcements" class="hidden">
+          <p class="hint">Push a message straight to every agent's dashboard banner — no WhatsApp needed for internal comms.</p>
+          <div class="toolbar">
+            <div class="narrow">
+              <label>Type</label>
+              <select id="annType">
+                <option value="info">Info</option>
+                <option value="warning">Warning</option>
+                <option value="maintenance">Maintenance</option>
+              </select>
+            </div>
+            <div>
+              <label>Message</label>
+              <input id="annMessage" placeholder="e.g. New feature: bulk WhatsApp reminders are live!" />
+            </div>
+            <div class="narrow">
+              <label>Expires (optional)</label>
+              <input id="annExpires" type="date" />
+            </div>
+            <button id="createAnnBtn" class="teal">Publish</button>
+          </div>
+          <div id="annErr" class="err"></div>
+          <div class="table-scroll" style="margin-top:14px">
+          <table>
+            <thead><tr><th>Message</th><th>Type</th><th>Status</th><th>Created</th><th>Expires</th><th></th></tr></thead>
+            <tbody id="annBody"></tbody>
           </table>
           </div>
         </div>
@@ -708,7 +739,9 @@ function showTab(tab) {
   document.getElementById('tab-policies').classList.toggle('hidden', tab !== 'policies');
   document.getElementById('tab-licenses').classList.toggle('hidden', tab !== 'licenses');
   document.getElementById('tab-reports').classList.toggle('hidden', tab !== 'reports');
+  document.getElementById('tab-announcements').classList.toggle('hidden', tab !== 'announcements');
   document.getElementById('tab-settings').classList.toggle('hidden', tab !== 'settings');
+  if (tab === 'announcements') loadAnnouncements();
   if (tab === 'settings') loadSettings();
   const lists = document.getElementById('listsCard');
   if (lists) lists.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1523,6 +1556,69 @@ document.getElementById('generateReportBtn').onclick = () => {
 document.getElementById('exportExcelBtn').onclick = exportReportExcel;
 document.getElementById('exportPdfBtn').onclick = exportReportPdf;
 populateReportTypes();
+
+/* ---------- Announcements ---------- */
+async function loadAnnouncements() {
+  const list = await api('/api/admin/announcements');
+  const body = document.getElementById('annBody');
+  body.innerHTML = list.length
+    ? list.map(a => `
+      <tr>
+        <td>${esc(a.message)}</td>
+        <td><span class="badge ${a.type === 'warning' ? 'EXPIRED' : a.type === 'maintenance' ? 'off' : 'on'}">${esc(a.type)}</span></td>
+        <td><span class="badge ${a.active ? 'on' : 'off'}">${a.active ? 'active' : 'inactive'}</span></td>
+        <td>${new Date(a.createdAt).toLocaleDateString()}</td>
+        <td>${a.expiresAt ? new Date(a.expiresAt).toLocaleDateString() : '—'}</td>
+        <td class="row-actions">
+          ${a.active
+            ? `<button class="secondary" data-deactivate="${a.id}">Deactivate</button>`
+            : `<button class="ok" data-activate="${a.id}">Activate</button>`}
+          <button class="danger" data-delann="${a.id}">Delete</button>
+        </td>
+      </tr>`).join('')
+    : '<tr><td colspan="6">No announcements yet.</td></tr>';
+
+  body.querySelectorAll('[data-activate]').forEach(btn => {
+    btn.onclick = async () => {
+      await api('/api/admin/announcements/' + btn.dataset.activate + '/activate', { method: 'POST' });
+      loadAnnouncements();
+    };
+  });
+  body.querySelectorAll('[data-deactivate]').forEach(btn => {
+    btn.onclick = async () => {
+      await api('/api/admin/announcements/' + btn.dataset.deactivate + '/deactivate', { method: 'POST' });
+      loadAnnouncements();
+    };
+  });
+  body.querySelectorAll('[data-delann]').forEach(btn => {
+    btn.onclick = async () => {
+      if (!confirm('Delete this announcement permanently?')) return;
+      await api('/api/admin/announcements/' + btn.dataset.delann, { method: 'DELETE' });
+      loadAnnouncements();
+    };
+  });
+}
+
+document.getElementById('createAnnBtn').onclick = async () => {
+  const err = document.getElementById('annErr');
+  err.textContent = '';
+  const message = document.getElementById('annMessage').value.trim();
+  if (!message) { err.textContent = 'Message is required.'; return; }
+  const type = document.getElementById('annType').value;
+  const expiresRaw = document.getElementById('annExpires').value;
+  const expiresAt = expiresRaw ? new Date(expiresRaw + 'T23:59:59').getTime() : null;
+  try {
+    await api('/api/admin/announcements', {
+      method: 'POST',
+      body: JSON.stringify({ message, type, expiresAt })
+    });
+    document.getElementById('annMessage').value = '';
+    document.getElementById('annExpires').value = '';
+    loadAnnouncements();
+  } catch (e) {
+    err.textContent = e.message || 'Could not publish announcement';
+  }
+};
 
 checkSession();
 </script>

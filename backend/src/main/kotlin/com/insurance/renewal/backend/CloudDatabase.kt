@@ -130,6 +130,19 @@ class CloudDatabase(private val dbFile: File) {
                     )
                     """.trimIndent()
                 )
+                st.executeUpdate(
+                    """
+                    CREATE TABLE IF NOT EXISTS announcements (
+                      id TEXT PRIMARY KEY,
+                      message TEXT NOT NULL,
+                      type TEXT NOT NULL DEFAULT 'info',
+                      active INTEGER NOT NULL DEFAULT 1,
+                      created_at INTEGER NOT NULL,
+                      expires_at INTEGER
+                    )
+                    """.trimIndent()
+                )
+                st.executeUpdate("CREATE INDEX IF NOT EXISTS idx_announcements_active ON announcements(active)")
             }
             ensureTrialColumns()
             refreshExpiredLicenses()
@@ -950,6 +963,75 @@ class CloudDatabase(private val dbFile: File) {
             ps.executeQuery().use { return it.next() }
         }
     }
+
+    fun createAnnouncement(message: String, type: String, expiresAt: Long?): AnnouncementDto {
+        val dto = AnnouncementDto(
+            id = UUID.randomUUID().toString(),
+            message = message,
+            type = type,
+            active = true,
+            createdAt = System.currentTimeMillis(),
+            expiresAt = expiresAt
+        )
+        connection().use { conn ->
+            conn.prepareStatement(
+                "INSERT INTO announcements (id, message, type, active, created_at, expires_at) VALUES (?, ?, ?, 1, ?, ?)"
+            ).use { ps ->
+                ps.setString(1, dto.id)
+                ps.setString(2, dto.message)
+                ps.setString(3, dto.type)
+                ps.setLong(4, dto.createdAt)
+                if (dto.expiresAt != null) ps.setLong(5, dto.expiresAt) else ps.setNull(5, java.sql.Types.BIGINT)
+                ps.executeUpdate()
+            }
+        }
+        return dto
+    }
+
+    fun listAnnouncements(): List<AnnouncementDto> = connection().use { conn ->
+        conn.prepareStatement("SELECT * FROM announcements ORDER BY created_at DESC LIMIT 200").use { ps ->
+            ps.executeQuery().use { rs ->
+                buildList { while (rs.next()) add(rs.toAnnouncement()) }
+            }
+        }
+    }
+
+    /** Active announcements that haven't expired, for display in the agent app/portal. */
+    fun listActiveAnnouncements(): List<AnnouncementDto> = connection().use { conn ->
+        val now = System.currentTimeMillis()
+        conn.prepareStatement(
+            "SELECT * FROM announcements WHERE active = 1 AND (expires_at IS NULL OR expires_at > ?) ORDER BY created_at DESC"
+        ).use { ps ->
+            ps.setLong(1, now)
+            ps.executeQuery().use { rs ->
+                buildList { while (rs.next()) add(rs.toAnnouncement()) }
+            }
+        }
+    }
+
+    fun setAnnouncementActive(id: String, active: Boolean): Boolean = connection().use { conn ->
+        conn.prepareStatement("UPDATE announcements SET active=? WHERE id=?").use { ps ->
+            ps.setInt(1, if (active) 1 else 0)
+            ps.setString(2, id)
+            ps.executeUpdate() > 0
+        }
+    }
+
+    fun deleteAnnouncement(id: String): Boolean = connection().use { conn ->
+        conn.prepareStatement("DELETE FROM announcements WHERE id=?").use { ps ->
+            ps.setString(1, id)
+            ps.executeUpdate() > 0
+        }
+    }
+
+    private fun java.sql.ResultSet.toAnnouncement() = AnnouncementDto(
+        id = getString("id"),
+        message = getString("message"),
+        type = getString("type"),
+        active = getInt("active") == 1,
+        createdAt = getLong("created_at"),
+        expiresAt = getObject("expires_at")?.let { (it as Number).toLong() }
+    )
 
     fun listLicenses(query: String? = null, status: String? = null): List<LicenseDto> {
         refreshExpiredLicenses()

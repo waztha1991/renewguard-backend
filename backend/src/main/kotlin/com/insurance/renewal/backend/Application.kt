@@ -584,6 +584,47 @@ fun Application.module() {
             else call.respond(HttpStatusCode.BadRequest, result)
         }
 
+        get("/api/admin/announcements") {
+            if (!requireAdmin(call)) return@get
+            call.respond(db.listAnnouncements())
+        }
+
+        post("/api/admin/announcements") {
+            if (!requireAdmin(call)) return@post
+            val req = call.receive<CreateAnnouncementRequest>()
+            if (req.message.isBlank()) {
+                call.respond(HttpStatusCode.BadRequest, ErrorResponse("Message is required"))
+                return@post
+            }
+            val type = if (req.type in listOf(AnnouncementType.INFO, AnnouncementType.WARNING, AnnouncementType.MAINTENANCE)) {
+                req.type
+            } else {
+                AnnouncementType.INFO
+            }
+            call.respond(db.createAnnouncement(req.message.trim(), type, req.expiresAt))
+        }
+
+        post("/api/admin/announcements/{id}/activate") {
+            if (!requireAdmin(call)) return@post
+            val id = call.parameters["id"]!!
+            if (db.setAnnouncementActive(id, true)) call.respond(MessageResponse("Announcement activated"))
+            else call.respond(HttpStatusCode.NotFound, ErrorResponse("Not found"))
+        }
+
+        post("/api/admin/announcements/{id}/deactivate") {
+            if (!requireAdmin(call)) return@post
+            val id = call.parameters["id"]!!
+            if (db.setAnnouncementActive(id, false)) call.respond(MessageResponse("Announcement deactivated"))
+            else call.respond(HttpStatusCode.NotFound, ErrorResponse("Not found"))
+        }
+
+        delete("/api/admin/announcements/{id}") {
+            if (!requireAdmin(call)) return@delete
+            val id = call.parameters["id"]!!
+            if (db.deleteAnnouncement(id)) call.respond(MessageResponse("Announcement deleted"))
+            else call.respond(HttpStatusCode.NotFound, ErrorResponse("Not found"))
+        }
+
         get("/admin") {
             call.respondText(adminHtml, ContentType.Text.Html)
         }

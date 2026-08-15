@@ -311,3 +311,27 @@ object LicenseStatus {
     const val EXPIRED = "EXPIRED"
     const val REVOKED = "REVOKED"
 }
+
+object AnnouncementType {
+    const val INFO = "info"
+    const val WARNING = "warning"
+    const val MAINTENANCE = "maintenance"
+}
+
+@Serializable
+data class AnnouncementDto(
+    val id: String,
+    val message: String,
+    val type: String = AnnouncementType.INFO,
+    val active: Boolean = true,
+    val createdAt: Long = System.currentTimeMillis(),
+    val expiresAt: Long? = null
+)
+
+@Serializable
+data class CreateAnnouncementRequest(
+    val message: String,
+    val type: String = AnnouncementType.INFO,
+    val expiresAt: Long? = null
+)
+
